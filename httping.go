@@ -15,8 +15,6 @@ import (
 	"os/signal"
 	"strings"
 	"time"
-
-	"github.com/mgutz/ansi"
 )
 
 func main() {
@@ -74,9 +72,6 @@ func ping(httpVerb string, url *url.URL) {
 		Timeout: timeout,
 	}
 	successfulProbes := 0
-	ansiRed := ansi.ColorCode("red+h:black")
-	ansiGreen := ansi.ColorCode("green+h:black")
-	reset := ansi.ColorCode("reset")
 	result, err := client.Get(url.String())
 
 	for i := 1; ; i++ {
@@ -95,7 +90,7 @@ func ping(httpVerb string, url *url.URL) {
 		}
 
 		if err != nil {
-			fmt.Println(ansiRed, "Fatal error!", err, reset)
+			fmt.Println("Fatal error!", err)
 		}
 
 		timeTotal += responseTime
@@ -120,7 +115,7 @@ func ping(httpVerb string, url *url.URL) {
 			for sig := range c {
 				timeAverage := time.Duration(int64(timeTotal) / int64(i))
 				_ = sig
-				fmt.Println(ansiGreen, "Probes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage, reset)
+				fmt.Println("\nProbes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage)
 				os.Exit(1)
 			}
 		}()
