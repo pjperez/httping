@@ -3,6 +3,9 @@ httping - A tool to measure RTT on HTTP/S requests
 
 This tool should be able to run on Windows, Linux and Mac OS/X, but it has only been tested in Windows 10.
 
+### Requirements
+Golang >1.3 ::  Otherwise it will fail with *unknown http.Client field 'Timeout' in struct literal*
+
 ### Installing
 go get github.com/pjperez/httping
 
