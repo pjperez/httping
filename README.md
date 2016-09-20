@@ -19,4 +19,13 @@ httping help
 ### Warranty
 This is just a learning exercise, hence it is distributed AS IS, with no warranty.
 
-You should not use this software in production under any circumstances. It's not intended to and it has not been thoroughly tested.
+You should not use this software in production under any circumstances. It's not intended to and it has not been thoroughly tested and problably it's not very accurate.
+
+# Contributing
+
+In order to contribute you can:
+
+1. Open a new Issue
+2. Fork the project, add a feature or fix and send us a PR
+3. Go to the [Projects](https://github.com/pjperez/httping/projects) section and comment on a card/issue from the TODO list.
+4. Just get in touch if you have other ideas :)
