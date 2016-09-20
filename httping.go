@@ -25,7 +25,7 @@ func main() {
 	fmt.Println("Help: httping help")
 
 	if (len(os.Args) <= 1) || (os.Args[1] == "help") {
-		fmt.Println("\n\nUsage: httping url[:port] [GET|HEAD]")
+		fmt.Println("\n\nUsage: httping [http://|https://]url[:port] [GET|HEAD]")
 		os.Exit(1)
 	}
 
@@ -120,8 +120,7 @@ func ping(httpVerb string, url *url.URL) {
 			for sig := range c {
 				timeAverage := time.Duration(int64(timeTotal) / int64(i))
 				_ = sig
-				fmt.Println(ansiGreen)
-				fmt.Println("Probes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage, reset)
+				fmt.Println(ansiGreen, "Probes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage, reset)
 				os.Exit(1)
 			}
 		}()
