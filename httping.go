@@ -119,7 +119,8 @@ func ping(httpVerb string, url *url.URL) {
 		go func() {
 			for sig := range c {
 				timeAverage := time.Duration(int64(timeTotal) / int64(i))
-				fmt.Println(ansiRed, sig, ansiGreen)
+				_ = sig
+				fmt.Println(ansiGreen)
 				fmt.Println("Probes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage, reset)
 				os.Exit(1)
 			}
