@@ -11,7 +11,30 @@ Golang >1.3 ::  Otherwise it will fail with *unknown http.Client field 'Timeout'
 go get github.com/pjperez/httping
 ```
 ### Usage
-httping url[:port] [GET|HEAD]
+httping [http://|https://]url[:port] [GET|HEAD]
+
+#### Example
+
+```
+PS D:\httping> .\httping.exe github.com HEAD
+
+httping 0.1 - A tool to measure RTT on HTTP/S requests
+Help: httping help
+
+
+No protocol specified, falling back to HTTP
+
+HTTP HEAD to github.com (http://github.com):
+connected to github.com, seq=1, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=581.92 ms
+connected to github.com, seq=2, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=317.96 ms
+connected to github.com, seq=3, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=300.06 ms
+connected to github.com, seq=4, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=327.54 ms
+connected to github.com, seq=5, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=288.91 ms
+
+Probes sent: 5
+Successful responses: 5
+Average response time: 363.27848ms
+```
 
 ### Help
 httping help
