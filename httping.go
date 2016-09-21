@@ -1,4 +1,4 @@
-// httping 0.1 - A tool to measure RTT on HTTP/S requests
+// httping 0.2 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -7,6 +7,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,15 +20,15 @@ import (
 
 func main() {
 
-	fmt.Println("\nhttping 0.1 - A tool to measure RTT on HTTP/S requests")
-	fmt.Println("Help: httping help")
+	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: GET or HEAD")
+	countPtr := flag.Int("count", 10, "Number of requests to send")
 
-	if (len(os.Args) <= 1) || (os.Args[1] == "help") {
-		fmt.Println("\n\nUsage: httping [http://|https://]url[:port] [GET|HEAD]")
-		os.Exit(1)
-	}
+	flag.Parse()
 
-	urlStr := os.Args[1]
+	fmt.Println("\nhttping 0.2 - A tool to measure RTT on HTTP/S requests")
+	fmt.Println("Help: httping -h")
+
+	urlStr := flag.Args()[0]
 
 	if urlStr[:7] != "http://" {
 		if urlStr[:8] != "https://" {
@@ -47,34 +48,25 @@ func main() {
 		return
 	}
 
-	httpVerb := "GET"
-
-	if len(os.Args) >= 3 {
-		if os.Args[2] == "HEAD" {
-			httpVerb = os.Args[2]
-		} else {
-			httpVerb = "GET"
-		}
-	} else {
-		fmt.Printf("No HTTP Verb specified, falling back to HTTP\n\n")
-	}
+	httpVerb := *httpverbPtr
 
 	fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url)
+	ping(httpVerb, url, *countPtr)
 }
 
-func ping(httpVerb string, url *url.URL) {
+func ping(httpVerb string, url *url.URL, count int) {
 	// This function loops indefinitely (TODO- Select number of iterations) and prints result on screen after each loop
 
 	timeTotal := time.Duration(0)
 	timeout := time.Duration(2 * time.Second)
+	i := 1
 	client := http.Client{
 		Timeout: timeout,
 	}
 	successfulProbes := 0
 	result, err := client.Get(url.String())
 
-	for i := 1; ; i++ {
+	for i = 1; count >= i; i++ {
 
 		timeStart := time.Now()
 		responseTime := time.Since(timeStart)
@@ -100,7 +92,7 @@ func ping(httpVerb string, url *url.URL) {
 		bytes := len(body)
 
 		// Print result on screen
-		fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url.Host, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+		fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 
 		// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode
 		if result.StatusCode == 200 {
@@ -120,4 +112,8 @@ func ping(httpVerb string, url *url.URL) {
 			}
 		}()
 	}
+
+	timeAverage := time.Duration(int64(timeTotal) / int64(i))
+
+	fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage)
 }
