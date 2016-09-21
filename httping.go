@@ -30,15 +30,20 @@ func main() {
 
 	urlStr := flag.Args()[0]
 
-	if urlStr[:7] != "http://" {
-		if urlStr[:8] != "https://" {
-			if strings.Contains(urlStr, "://") {
-				fmt.Println("\n\nWrong protocol specified, httping supports HTTP and HTTPS")
-				os.Exit(1)
+	if len(flag.Args()[0]) > 6 {
+		if urlStr[:7] != "http://" {
+			if urlStr[:8] != "https://" {
+				if strings.Contains(urlStr, "://") {
+					fmt.Println("\n\nWrong protocol specified, httping supports HTTP and HTTPS")
+					os.Exit(1)
+				}
+				fmt.Printf("\n\nNo protocol specified, falling back to HTTP\n\n")
+				urlStr = "http://" + urlStr
 			}
-			fmt.Printf("\n\nNo protocol specified, falling back to HTTP\n\n")
-			urlStr = "http://" + urlStr
 		}
+	} else {
+		fmt.Println()
+		os.Exit(1)
 	}
 
 	url, err := url.Parse(urlStr)
@@ -105,7 +110,7 @@ func ping(httpVerb string, url *url.URL, count int) {
 		signal.Notify(c, os.Interrupt)
 		go func() {
 			for sig := range c {
-				timeAverage := time.Duration(int64(timeTotal) / int64(i))
+				timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
 				_ = sig
 				fmt.Println("\nProbes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage)
 				os.Exit(1)
@@ -113,7 +118,7 @@ func ping(httpVerb string, url *url.URL, count int) {
 		}()
 	}
 
-	timeAverage := time.Duration(int64(timeTotal) / int64(i))
+	timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
 
 	fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage)
 }
