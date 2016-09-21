@@ -1,4 +1,4 @@
-# httping
+# httping 0.2
 httping - A tool to measure RTT on HTTP/S requests 
 
 This tool should be able to run on Windows, Linux and Mac OS/X, but it has only been tested in Windows 10.
@@ -30,24 +30,23 @@ httping [OPTIONS] url
 #### Example
 
 ```
-PS D:\httping> .\httping.exe github.com HEAD
+PS D:\httping> httping.exe --count=4 --httpverb=GET github.com
 
-httping 0.1 - A tool to measure RTT on HTTP/S requests
+httping 0.2 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
 
 
 No protocol specified, falling back to HTTP
 
-HTTP HEAD to github.com (http://github.com):
-connected to github.com, seq=1, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=581.92 ms
-connected to github.com, seq=2, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=317.96 ms
-connected to github.com, seq=3, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=300.06 ms
-connected to github.com, seq=4, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=327.54 ms
-connected to github.com, seq=5, httpVerb=HEAD, httpStatus=200, bytes=0, RTT=288.91 ms
+HTTP GET to github.com (http://github.com):
+connected to http://github.com, seq=1, httpVerb=GET, httpStatus=200, bytes=25755, RTT=557.36 ms
+connected to http://github.com, seq=2, httpVerb=GET, httpStatus=200, bytes=25755, RTT=260.47 ms
+connected to http://github.com, seq=3, httpVerb=GET, httpStatus=200, bytes=25754, RTT=286.28 ms
+connected to http://github.com, seq=4, httpVerb=GET, httpStatus=200, bytes=25754, RTT=294.26 ms
 
-Probes sent: 5
-Successful responses: 5
-Average response time: 363.27848ms
+Probes sent: 4
+Successful responses: 4
+Average response time: 349.59305ms
 ```
 
 ### Help
