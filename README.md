@@ -14,6 +14,7 @@ go get github.com/pjperez/httping
 httping [OPTIONS] url
 
 #### Options
+```
 -h
   Help
   
@@ -24,6 +25,7 @@ httping [OPTIONS] url
 --httpverb=GET
   Verb to use for the HTTP request: GET or HEAD.
   Default: GET
+```
 
 #### Example
 
