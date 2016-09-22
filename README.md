@@ -11,9 +11,13 @@ This tool should be able to run on Windows, Linux and Mac OS/X, but it has only 
 Golang >1.3 ::  Otherwise it will fail with *unknown http.Client field 'Timeout' in struct literal*
 
 ### Installing
+#### From source
 ```
 go get github.com/pjperez/httping
 ```
+#### Binary
+Check the [latest release](https://github.com/pjperez/httping/releases) and download the standalone binary from there, it doesn't need installation and it's portable.
+
 ### Usage
 httping [OPTIONS] url
 
