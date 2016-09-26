@@ -98,23 +98,24 @@ func ping(httpVerb string, url *url.URL, count int) {
 		}
 
 		if err != nil {
-			fmt.Println("Fatal error!", err)
-		}
+			fmt.Println("Timeout when connecting to", url)
 
-		// Add all the response times to calculate the average later
-		timeTotal += responseTime
+		} else {
+			// Add all the response times to calculate the average later
+			timeTotal += responseTime
 
-		// Calculate the downloaded bytes
-		body, _ := ioutil.ReadAll(result.Body)
-		bytes := len(body)
+			// Calculate the downloaded bytes
+			body, _ := ioutil.ReadAll(result.Body)
+			bytes := len(body)
 
-		// Print result on screen
-		fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+			// Print result on screen
+			fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 
-		// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
-		if result.StatusCode == 200 {
-			successfulProbes++
-			responseTimes = append(responseTimes, float64(responseTime))
+			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
+			if result.StatusCode == 200 {
+				successfulProbes++
+				responseTimes = append(responseTimes, float64(responseTime))
+			}
 		}
 
 		time.Sleep(1e9)
