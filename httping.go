@@ -71,6 +71,7 @@ func ping(httpVerb string, url *url.URL, count int) {
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
+	fBreak := 0
 
 	// Change request timeout to 2 seconds
 	timeout := time.Duration(2 * time.Second)
@@ -81,7 +82,7 @@ func ping(httpVerb string, url *url.URL, count int) {
 	result, err := client.Get(url.String())
 
 	// Send requests for url, "count" times
-	for i = 1; count >= i; i++ {
+	for i = 1; count >= i && fBreak == 0; i++ {
 		// Initialise variables
 		timeStart := time.Now()
 		responseTime := time.Since(timeStart)
@@ -121,15 +122,15 @@ func ping(httpVerb string, url *url.URL, count int) {
 		time.Sleep(1e9)
 
 		c := make(chan os.Signal, 1)
+
 		signal.Notify(c, os.Interrupt)
 		go func() {
 			for sig := range c {
-				timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
 				_ = sig
-				fmt.Println("\nProbes sent:", i, "\nSuccessful responses:", successfulProbes, "\nAverage response time:", timeAverage)
-				os.Exit(1)
+				fBreak = 1
 			}
 		}()
+
 	}
 
 	// Let's calculate and spill some results
