@@ -21,21 +21,26 @@ import (
 )
 
 func main() {
-
+	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: GET or HEAD")
 	countPtr := flag.Int("count", 10, "Number of requests to send")
-	httpVerb := *httpverbPtr
 
 	flag.Parse()
+
+	urlStr := *urlPtr
+	httpVerb := *httpverbPtr
 
 	fmt.Println("\nhttping 0.5 - A tool to measure RTT on HTTP/S requests")
 	fmt.Println("Help: httping -h")
 
-	urlStr := flag.Args()[0]
+	if len(urlStr) < 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	// Check what protocol has been specified in the URL by checking the first 7 or 8 chars.
 	// If none specified, fall back to HTTP
-	if len(flag.Args()[0]) > 6 {
+	if len(urlStr) > 6 {
 		if urlStr[:7] != "http://" {
 			if urlStr[:8] != "https://" {
 				if strings.Contains(urlStr, "://") {
@@ -43,7 +48,9 @@ func main() {
 					os.Exit(1)
 				}
 				fmt.Printf("\n\nNo protocol specified, falling back to HTTP\n\n")
+
 				urlStr = "http://" + urlStr
+
 			}
 		}
 	} else {
@@ -53,6 +60,7 @@ func main() {
 
 	// Parse URL and fail if the host can't be resolved.
 	url, err := url.Parse(urlStr)
+
 	if err != nil {
 		fmt.Println("Cannot resolve: " + urlStr)
 		os.Exit(1)
@@ -135,7 +143,13 @@ func ping(httpVerb string, url *url.URL, count int) {
 
 	// Let's calculate and spill some results
 	// 1. Average response time
-	timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
+	timeAverage := time.Duration(int64(0))
+	if successfulProbes > 0 {
+		timeAverage = time.Duration(int64(timeTotal) / int64(successfulProbes))
+	} else {
+		fmt.Println("All probes failed")
+		os.Exit(1)
+	}
 
 	// 2. Min and Max response times
 	var biggest float64

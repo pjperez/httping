@@ -19,18 +19,21 @@ go get github.com/pjperez/httping
 Check the [latest release](https://github.com/pjperez/httping/releases) and download the standalone binary from there, it doesn't need installation and it's portable.
 
 ### Usage
-httping [OPTIONS] url
+httping -url requested_url [OPTIONS]
 
 #### Options
 ```
 -h
   Help
-  
---count=10
+
+-url *https://github.com*
+  Requested URL. If no protocol is specified with http:// or https:// the system will use http://
+
+-count *10*
   Number of requests to send.
   Default: 10
   
---httpverb=GET
+-httpverb *GET*
   Verb to use for the HTTP request: GET or HEAD.
   Default: GET
 ```
