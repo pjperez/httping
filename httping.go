@@ -20,6 +20,8 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
+const httpingVersion = "0.6"
+
 func main() {
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: GET or HEAD")
@@ -30,11 +32,22 @@ func main() {
 	urlStr := *urlPtr
 	httpVerb := *httpverbPtr
 
-	fmt.Println("\nhttping 0.5 - A tool to measure RTT on HTTP/S requests")
+	fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
 	fmt.Println("Help: httping -h")
 
+	// Exit if URL is not specified, print usage
 	if len(urlStr) < 1 {
 		flag.Usage()
+		fmt.Printf("\nYou haven't specified a URL to test!\n\n")
+
+		os.Exit(1)
+	}
+
+	// Exit if the number of probes is zero, print usage
+	if *countPtr < 1 {
+		flag.Usage()
+		fmt.Printf("\nNumber of probes has to be greater than 0!\n\n")
+
 		os.Exit(1)
 	}
 
@@ -44,7 +57,7 @@ func main() {
 		if urlStr[:7] != "http://" {
 			if urlStr[:8] != "https://" {
 				if strings.Contains(urlStr, "://") {
-					fmt.Println("\n\nWrong protocol specified, httping supports HTTP and HTTPS")
+					fmt.Println("\n\nWrong protocol specified, httping only supports HTTP and HTTPS")
 					os.Exit(1)
 				}
 				fmt.Printf("\n\nNo protocol specified, falling back to HTTP\n\n")
