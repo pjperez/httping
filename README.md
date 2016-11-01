@@ -5,16 +5,20 @@ This tool should be able to run on Windows, Linux and Mac OS/X, but it has only 
 
 ### Latest release
 
-- Version [0.5](https://github.com/pjperez/httping/releases)
+- [Download from Github](https://github.com/pjperez/httping/releases)
 
 ### Requirements
-Golang >1.3 ::  Otherwise it will fail with *unknown http.Client field 'Timeout' in struct literal*
+Golang >1.3 ::  http.Client Timeout wasn't available in previous versions
 
 ### Installing
 #### From source
 ```
 go get github.com/pjperez/httping
+go install github.com/pjperez/httping
 ```
+
+You'll then find httping.exe in your $GOPATH/bin directory
+
 #### Binary
 Check the [latest release](https://github.com/pjperez/httping/releases) and download the standalone binary from there, it doesn't need installation and it's portable.
 
@@ -41,49 +45,34 @@ httping -url requested_url [OPTIONS]
 #### Example
 
 ```
-PS D:\httping> httping.exe --count=100 google.com
+PS C:\temp> ./httping.exe -url https://wormhole.network --count 10
 
-httping 0.5 - A tool to measure RTT on HTTP/S requests
+httping 0.6 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
+HTTP GET to wormhole.network (https://wormhole.network):
+connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=147.75 ms
+connected to https://wormhole.network, seq=2, httpVerb=GET, httpStatus=200, bytes=10991, RTT=61.73 ms
+connected to https://wormhole.network, seq=3, httpVerb=GET, httpStatus=200, bytes=10991, RTT=79.19 ms
+connected to https://wormhole.network, seq=4, httpVerb=GET, httpStatus=200, bytes=10991, RTT=63.85 ms
+connected to https://wormhole.network, seq=5, httpVerb=GET, httpStatus=200, bytes=10991, RTT=67.34 ms
+connected to https://wormhole.network, seq=6, httpVerb=GET, httpStatus=200, bytes=10991, RTT=70.56 ms
+connected to https://wormhole.network, seq=7, httpVerb=GET, httpStatus=200, bytes=10991, RTT=60.03 ms
+connected to https://wormhole.network, seq=8, httpVerb=GET, httpStatus=200, bytes=10991, RTT=90.19 ms
+connected to https://wormhole.network, seq=9, httpVerb=GET, httpStatus=200, bytes=10991, RTT=79.58 ms
+connected to https://wormhole.network, seq=10, httpVerb=GET, httpStatus=200, bytes=10991, RTT=99.40 ms
 
-
-No protocol specified, falling back to HTTP
-
-HTTP GET to google.com (http://google.com):
-connected to http://google.com, seq=1, httpVerb=GET, httpStatus=200, bytes=10950, RTT=85.26 ms
-connected to http://google.com, seq=2, httpVerb=GET, httpStatus=200, bytes=11035, RTT=588.18 ms
-connected to http://google.com, seq=3, httpVerb=GET, httpStatus=200, bytes=10959, RTT=299.30 ms
-connected to http://google.com, seq=4, httpVerb=GET, httpStatus=200, bytes=10935, RTT=100.60 ms
-connected to http://google.com, seq=5, httpVerb=GET, httpStatus=200, bytes=10919, RTT=593.78 ms
-connected to http://google.com, seq=6, httpVerb=GET, httpStatus=200, bytes=10966, RTT=285.03 ms
-connected to http://google.com, seq=7, httpVerb=GET, httpStatus=200, bytes=11023, RTT=57.83 ms
-connected to http://google.com, seq=8, httpVerb=GET, httpStatus=200, bytes=10933, RTT=338.61 ms
-connected to http://google.com, seq=9, httpVerb=GET, httpStatus=200, bytes=11017, RTT=535.14 ms
-connected to http://google.com, seq=10, httpVerb=GET, httpStatus=200, bytes=10993, RTT=108.15 ms
-connected to http://google.com, seq=11, httpVerb=GET, httpStatus=200, bytes=10959, RTT=346.78 ms
-connected to http://google.com, seq=12, httpVerb=GET, httpStatus=200, bytes=10944, RTT=534.66 ms
-connected to http://google.com, seq=13, httpVerb=GET, httpStatus=200, bytes=10969, RTT=114.99 ms
-connected to http://google.com, seq=14, httpVerb=GET, httpStatus=200, bytes=10965, RTT=339.64 ms
-connected to http://google.com, seq=15, httpVerb=GET, httpStatus=200, bytes=10974, RTT=534.37 ms
-connected to http://google.com, seq=16, httpVerb=GET, httpStatus=200, bytes=10951, RTT=119.27 ms
-(...)
-connected to http://google.com, seq=97, httpVerb=GET, httpStatus=200, bytes=11024, RTT=534.96 ms
-connected to http://google.com, seq=98, httpVerb=GET, httpStatus=200, bytes=10983, RTT=115.59 ms
-connected to http://google.com, seq=99, httpVerb=GET, httpStatus=200, bytes=11004, RTT=340.18 ms
-connected to http://google.com, seq=100, httpVerb=GET, httpStatus=200, bytes=11008, RTT=535.81 ms
-
-Probes sent: 100
-Successful responses: 100
+Probes sent: 10
+Successful responses: 10
 % of requests failed: 0
-Min response time: 53.9967ms
-Average response time: 337.575484ms
-Median response time: 347.70375ms
-Max response time: 621.5548ms
+Min response time: 60.0311ms
+Average response time: 81.96285ms
+Median response time: 74.87805ms
+Max response time: 147.752ms
 
-90% of requests were faster than: 581.8406ms
-75% of requests were faster than: 535.29445ms
-50% of requests were faster than: 347.70375ms
-25% of requests were faster than: 117.43025ms
+90% of requests were faster than: 123.5738ms
+75% of requests were faster than: 90.194ms
+50% of requests were faster than: 74.87805ms
+25% of requests were faster than: 63.845ms
 ```
 
 ### Help
@@ -96,7 +85,7 @@ You should not use this software in production under any circumstances. It's not
 
 # Contributing
 
-In order to contribute you can:
+In order to contribute you can do any of the below:
 
 1. Open a new Issue
 2. Fork the project, add a feature or fix and send us a PR
