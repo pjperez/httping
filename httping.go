@@ -1,4 +1,4 @@
-// httping 0.5 - A tool to measure RTT on HTTP/S requests
+// httping 0.9 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -7,9 +7,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,15 +20,25 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/montanaflynn/stats"
 )
 
-const httpingVersion = "0.6"
+const httpingVersion = "0.9"
+
+// Reply is a data structure for the server replies
+type Reply struct {
+	Hostname string
+	ClientIP string
+	Time     time.Time
+}
 
 func main() {
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: GET or HEAD")
 	countPtr := flag.Int("count", 10, "Number of requests to send")
+	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
 
 	flag.Parse()
 
@@ -34,6 +47,16 @@ func main() {
 
 	fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
 	fmt.Println("Help: httping -h")
+
+	// If listener mode is selected, ignore the rest of the args
+	if *listenPtr > 0 {
+		listenPort := strconv.Itoa(*listenPtr)
+		fmt.Println("Listening on port " + listenPort)
+
+		http.HandleFunc("/", serverRESPONSE)
+		http.ListenAndServe(":"+listenPort, nil)
+
+	}
 
 	// Exit if URL is not specified, print usage
 	if len(urlStr) < 1 {
@@ -192,4 +215,27 @@ func ping(httpVerb string, url *url.URL, count int) {
 	fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\n% of requests failed:", float64(100-(successfulProbes*100)/(i-1)), "\nMin response time:", time.Duration(smallest), "\nAverage response time:", timeAverage, "\nMedian response time:", time.Duration(median), "\nMax response time:", time.Duration(biggest))
 
 	fmt.Println("\n90% of requests were faster than:", time.Duration(percentile90), "\n75% of requests were faster than:", time.Duration(percentile75), "\n50% of requests were faster than:", time.Duration(percentile50), "\n25% of requests were faster than:", time.Duration(percentile25))
+}
+
+func serverRESPONSE(w http.ResponseWriter, r *http.Request) {
+	hostname, err := os.Hostname() // Get the local hostname
+
+	// Get the client's IP address.
+	// RemoteAddr returns the client IP address with the port after a colon
+	// We split the client IP + port based on colon(s) and only remove
+	// after the last one, so we don't break IPv6
+	clientsocket := r.RemoteAddr
+	clientipMap := strings.Split(clientsocket, ":")
+	clientipMap = clientipMap[:len(clientipMap)-1]
+	clientip := strings.Join(clientipMap, ":")
+
+	response := Reply{hostname, clientip, time.Now()} // Construct the response with the gathered data
+
+	// Convert to json
+	jsonRESPONSE, err := json.Marshal(response)
+	if err != nil {
+		log.Output(0, "json conversion failed")
+	}
+
+	io.WriteString(w, string(jsonRESPONSE)) // Send response back to client
 }
