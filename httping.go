@@ -213,6 +213,7 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 		go func() {
 			for sig := range c {
 				_ = sig
+				// Stop the loop by enabling the fBreak flag
 				fBreak = 1
 			}
 		}()
