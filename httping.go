@@ -36,9 +36,10 @@ type Reply struct {
 
 func main() {
 	urlPtr := flag.String("url", "", "Requested URL")
-	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: GET or HEAD")
+	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
 	countPtr := flag.Int("count", 10, "Number of requests to send")
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
+	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 
 	flag.Parse()
 
@@ -103,11 +104,19 @@ func main() {
 		return
 	}
 
+	// If a custom host header is specified, use it. Otherwise host header = url.Host
+	var hostHeader string
+	if *hostHeaderPtr != "" {
+		hostHeader = *hostHeaderPtr
+	} else {
+		hostHeader = url.Host
+	}
+
 	fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url, *countPtr)
+	ping(httpVerb, url, *countPtr, hostHeader)
 }
 
-func ping(httpVerb string, url *url.URL, count int) {
+func ping(httpVerb string, url *url.URL, count int, hostHeader string) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -123,26 +132,19 @@ func ping(httpVerb string, url *url.URL, count int) {
 		Timeout: timeout,
 	}
 
-	result, err := client.Get(url.String())
-
 	// Send requests for url, "count" times
 	for i = 1; count >= i && fBreak == 0; i++ {
-		// Initialise variables
+		// Get the request ready - Headers, verb, etc
+		request, err := http.NewRequest(httpVerb, url.String(), nil)
+		request.Host = hostHeader
+		request.Header.Set("User-Agent", "httping "+httpingVersion)
+
+		// Send request and measure time to completion
 		timeStart := time.Now()
+		result, errRequest := client.Do(request)
 		responseTime := time.Since(timeStart)
 
-		// Send GET or HEAD request, depending on httpVerb received
-		if httpVerb == "GET" {
-			timeStart = time.Now()
-			result, err = client.Get(url.String())
-			responseTime = time.Since(timeStart)
-		} else {
-			timeStart = time.Now()
-			result, err = client.Head(url.String())
-			responseTime = time.Since(timeStart)
-		}
-
-		if err != nil {
+		if err != nil || errRequest != nil {
 			fmt.Println("Timeout when connecting to", url)
 
 		} else {
