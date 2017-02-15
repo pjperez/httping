@@ -64,36 +64,46 @@ httping -url requested_url [OPTIONS]
 #### Example
 
 ```
-PS C:\temp> ./httping.exe -url https://wormhole.network --count 10
+PS C:\temp> ./httping.exe -url https://wormhole.network -count 10
 
-httping 0.6 - A tool to measure RTT on HTTP/S requests
+httping 0.9.1 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
 HTTP GET to wormhole.network (https://wormhole.network):
-connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=147.75 ms
-connected to https://wormhole.network, seq=2, httpVerb=GET, httpStatus=200, bytes=10991, RTT=61.73 ms
-connected to https://wormhole.network, seq=3, httpVerb=GET, httpStatus=200, bytes=10991, RTT=79.19 ms
-connected to https://wormhole.network, seq=4, httpVerb=GET, httpStatus=200, bytes=10991, RTT=63.85 ms
-connected to https://wormhole.network, seq=5, httpVerb=GET, httpStatus=200, bytes=10991, RTT=67.34 ms
-connected to https://wormhole.network, seq=6, httpVerb=GET, httpStatus=200, bytes=10991, RTT=70.56 ms
-connected to https://wormhole.network, seq=7, httpVerb=GET, httpStatus=200, bytes=10991, RTT=60.03 ms
-connected to https://wormhole.network, seq=8, httpVerb=GET, httpStatus=200, bytes=10991, RTT=90.19 ms
-connected to https://wormhole.network, seq=9, httpVerb=GET, httpStatus=200, bytes=10991, RTT=79.58 ms
-connected to https://wormhole.network, seq=10, httpVerb=GET, httpStatus=200, bytes=10991, RTT=99.40 ms
+connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=381.99 ms
+connected to https://wormhole.network, seq=2, httpVerb=GET, httpStatus=200, bytes=10991, RTT=169.03 ms
+connected to https://wormhole.network, seq=3, httpVerb=GET, httpStatus=200, bytes=10991, RTT=94.19 ms
+connected to https://wormhole.network, seq=4, httpVerb=GET, httpStatus=200, bytes=10991, RTT=106.94 ms
+connected to https://wormhole.network, seq=5, httpVerb=GET, httpStatus=200, bytes=10991, RTT=78.16 ms
+connected to https://wormhole.network, seq=6, httpVerb=GET, httpStatus=200, bytes=10991, RTT=121.95 ms
+connected to https://wormhole.network, seq=7, httpVerb=GET, httpStatus=200, bytes=10991, RTT=103.13 ms
+connected to https://wormhole.network, seq=8, httpVerb=GET, httpStatus=200, bytes=10991, RTT=81.28 ms
+connected to https://wormhole.network, seq=9, httpVerb=GET, httpStatus=200, bytes=10991, RTT=125.78 ms
+connected to https://wormhole.network, seq=10, httpVerb=GET, httpStatus=200, bytes=10991, RTT=81.77 ms
 
 Probes sent: 10
 Successful responses: 10
 % of requests failed: 0
-Min response time: 60.0311ms
-Average response time: 81.96285ms
-Median response time: 74.87805ms
-Max response time: 147.752ms
+Min response time: 78.1639ms
+Average response time: 134.42187ms
+Median response time: 105.035ms
+Max response time: 381.9932ms
 
-90% of requests were faster than: 123.5738ms
-75% of requests were faster than: 90.194ms
-50% of requests were faster than: 74.87805ms
-25% of requests were faster than: 63.845ms
+90% of requests were faster than: 275.51005ms
+75% of requests were faster than: 125.7822ms
+50% of requests were faster than: 105.035ms
+25% of requests were faster than: 81.7667ms
 ```
 
+#### Example 2:
+
+```
+PS C:\temp> .\httping.exe -url https://wormhole.network -count 5 -json
+{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":1,"httpStatus":200,"bytes":10991,"rtt":415.5466}
+{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":2,"httpStatus":200,"bytes":10991,"rtt":120.0931}
+{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":3,"httpStatus":200,"bytes":10991,"rtt":75.6925}
+{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":4,"httpStatus":200,"bytes":10991,"rtt":121.3327}
+{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":5,"httpStatus":200,"bytes":10991,"rtt":71.4523}
+```
 ### Help
 httping help
 
