@@ -1,4 +1,4 @@
-// httping 0.9 - A tool to measure RTT on HTTP/S requests
+// httping 0.9.1 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -25,7 +25,9 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
-const httpingVersion = "0.9"
+const httpingVersion = "0.9.1"
+
+//const jsonResults = true
 
 // Reply is a data structure for the server replies
 type Reply struct {
@@ -34,20 +36,36 @@ type Reply struct {
 	Time     time.Time
 }
 
+// Result is the struct to generate the metada json results
+type Result struct {
+	Host        string  `json:"host"`
+	HTTPVerb    string  `json:"httpVerb"`
+	HostHeaders string  `json:"hostHeader"`
+	Seq         int     `json:"seq"`
+	HTTPStatus  int     `json:"httpStatus"`
+	Bytes       int     `json:"bytes"`
+	RTT         float32 `json:"rtt"`
+}
+
 func main() {
+	// Available flags
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
 	countPtr := flag.Int("count", 10, "Number of requests to send")
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
+	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
 
 	flag.Parse()
 
 	urlStr := *urlPtr
 	httpVerb := *httpverbPtr
+	jsonResults := *jsonResultsPtr
 
-	fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
-	fmt.Println("Help: httping -h")
+	if jsonResults == false {
+		fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
+		fmt.Println("Help: httping -h")
+	}
 
 	// If listener mode is selected, ignore the rest of the args
 	if *listenPtr > 0 {
@@ -112,11 +130,13 @@ func main() {
 		hostHeader = url.Host
 	}
 
-	fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url, *countPtr, hostHeader)
+	if jsonResults == false {
+		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
+	}
+	ping(httpVerb, url, *countPtr, hostHeader, jsonResults)
 }
 
-func ping(httpVerb string, url *url.URL, count int, hostHeader string) {
+func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResults bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -156,13 +176,33 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string) {
 			bytes := len(body)
 
 			// Print result on screen
-			fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+			if jsonResults == true {
+
+				// Get the json ready
+				results := &Result{
+					Host:        url.Host,
+					HTTPVerb:    httpVerb,
+					HostHeaders: hostHeader,
+					Seq:         i,
+					HTTPStatus:  result.StatusCode,
+					Bytes:       bytes,
+					RTT:         float32(responseTime) / 1e6,
+				}
+
+				resultsMarshaled, _ := json.Marshal(results)
+
+				fmt.Println(string(resultsMarshaled))
+
+			} else {
+				fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+			}
 
 			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
 			if result.StatusCode == 200 {
 				successfulProbes++
 				responseTimes = append(responseTimes, float64(responseTime))
 			}
+
 		}
 
 		time.Sleep(1e9)
@@ -214,9 +254,14 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string) {
 	percentile50, _ := stats.Percentile(responseTimes, float64(50))
 	percentile25, _ := stats.Percentile(responseTimes, float64(25))
 
-	fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\n% of requests failed:", float64(100-(successfulProbes*100)/(i-1)), "\nMin response time:", time.Duration(smallest), "\nAverage response time:", timeAverage, "\nMedian response time:", time.Duration(median), "\nMax response time:", time.Duration(biggest))
+	// Print it all!!!
+	if jsonResults == true {
 
-	fmt.Println("\n90% of requests were faster than:", time.Duration(percentile90), "\n75% of requests were faster than:", time.Duration(percentile75), "\n50% of requests were faster than:", time.Duration(percentile50), "\n25% of requests were faster than:", time.Duration(percentile25))
+	} else {
+		fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\n% of requests failed:", float64(100-(successfulProbes*100)/(i-1)), "\nMin response time:", time.Duration(smallest), "\nAverage response time:", timeAverage, "\nMedian response time:", time.Duration(median), "\nMax response time:", time.Duration(biggest))
+
+		fmt.Println("\n90% of requests were faster than:", time.Duration(percentile90), "\n75% of requests were faster than:", time.Duration(percentile75), "\n50% of requests were faster than:", time.Duration(percentile50), "\n25% of requests were faster than:", time.Duration(percentile25))
+	}
 }
 
 func serverRESPONSE(w http.ResponseWriter, r *http.Request) {

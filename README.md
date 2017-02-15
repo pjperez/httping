@@ -24,7 +24,18 @@ You'll then find httping.exe in your $GOPATH/bin directory
 Check the [latest release](https://github.com/pjperez/httping/releases) and download the standalone binary from there, it doesn't need installation and it's portable.
 
 ### Usage
-#### Client
+#### Server mode (listener)
+httping -listen port [OPTIONS]
+
+It will start a listener on *port* and reply to any GET request as follows:
+
+    {
+      "Hostname":"Server_Hostname",
+      "ClientIP":"Client_IP",
+      "Time":"Current_Timestamp"
+    }
+
+#### Client mode (original httping)
 httping -url requested_url [OPTIONS]
 
 ##### Options
@@ -45,10 +56,10 @@ httping -url requested_url [OPTIONS]
 
 -hostheader "github.com"
   Specify a custom Host: header
-```
 
-#### Server
-httping -listen port [OPTIONS]
+-json
+  If specified, outputs the results in json format
+```
 
 #### Example
 

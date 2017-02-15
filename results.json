@@ -1,0 +1,23 @@
+// This is an example of how json results should look like
+{
+    "metadata": {
+        "host": "bing.com",
+        "protocol": "https",
+        "httpVerb": "GET",
+        "host header": "bing.com"
+    },  
+    "probes": [
+        {
+            "seq": "1",
+            "httpStatus": "200",
+            "bytes": "92666",
+            "rtt": "135.49"
+        },
+        {
+            "seq": "2",
+            "httpStatus": "200",
+            "bytes": "92666",
+            "rtt": "135.49"
+        }
+    ]  
+}
