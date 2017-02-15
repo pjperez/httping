@@ -8,7 +8,8 @@ This tool should be able to run on Windows, Linux and Mac OS/X, but it has only 
 - [Download from Github](https://github.com/pjperez/httping/releases)
 
 ### Requirements
-Golang >1.3 ::  http.Client Timeout wasn't available in previous versions
+Golang >1.3 ::  http.Client Timeout wasn't available in previous versions    
+External library requirement: [github.com/montanaflynn/stats](https://github.com/montanaflynn/stats)
 
 ### Installing
 #### From source
@@ -23,9 +24,10 @@ You'll then find httping.exe in your $GOPATH/bin directory
 Check the [latest release](https://github.com/pjperez/httping/releases) and download the standalone binary from there, it doesn't need installation and it's portable.
 
 ### Usage
+#### Client
 httping -url requested_url [OPTIONS]
 
-#### Options
+##### Options
 ```
 -h
   Help
@@ -40,7 +42,13 @@ httping -url requested_url [OPTIONS]
 -httpverb *GET*
   Verb to use for the HTTP request: GET or HEAD.
   Default: GET
+
+-hostheader "github.com"
+  Specify a custom Host: header
 ```
+
+#### Server
+httping -listen port [OPTIONS]
 
 #### Example
 
@@ -90,5 +98,6 @@ In order to contribute you can do any of the below:
 1. Open a new Issue
 2. Fork the project, add a feature or fix and send us a PR
 3. Go to the [Projects](https://github.com/pjperez/httping/projects) section and comment on a card/issue from the TODO list.
-4. Just get in touch if you have other ideas :)
-5. Do whatever you want actually! :)
+4. Open an issue
+5. Just get in touch if you have other ideas :)
+6. Do whatever you want actually! :)
