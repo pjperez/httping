@@ -14,8 +14,7 @@ External library requirement: [github.com/montanaflynn/stats](https://github.com
 ### Installing
 #### From source
 ```
-go get github.com/pjperez/httping
-go install github.com/pjperez/httping
+go install github.com/pjperez/httping@latest
 ```
 
 You'll then find httping.exe in your $GOPATH/bin directory
