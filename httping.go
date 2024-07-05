@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/montanaflynn/stats"
+    "github.com/rapid7/go-get-proxied/proxy"
 )
 
 const httpingVersion = "0.9.1"
@@ -150,6 +151,7 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 	// Change request timeout to 2 seconds
 	timeout := time.Duration(2 * time.Second)
+	transport := &http.Transport{}
 
 	// Send requests for url, "count" times
 	for i = 1; count >= i && fBreak == 0; i++ {
@@ -157,10 +159,12 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 		// each time - init new client - safer in the dynamic environment where proxy changes often
 		// (compute time is cheaper than having to debug)
 		// part 1: set up proxy (if any)
-		transport := &http.Transport{}
-
+		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
 		if !noProxy {
-			transport.Proxy = http.ProxyFromEnvironment
+			p := proxy.NewProvider("").GetProxy("https", "")
+			if p != nil {
+				transport.Proxy = http.ProxyURL(p.URL())
+			}
 		}
 
 		// part 2: bootstrap client
