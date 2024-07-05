@@ -150,21 +150,29 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 	// Change request timeout to 2 seconds
 	timeout := time.Duration(2 * time.Second)
-	
+
 	// set up proxy (if any)
 	transport := &http.Transport{}
 
-	if !noProxy {
-		transport.Proxy = http.ProxyFromEnvironment
-	}
-
-	client := http.Client{
-		Timeout: timeout,
-		Transport: transport,
-	}
-
 	// Send requests for url, "count" times
 	for i = 1; count >= i && fBreak == 0; i++ {
+		// More stateless approach, and as part of it,
+		// each time - init new client - safer in the dynamic environment where proxy changes often
+		// (compute time is cheaper than having to debug)
+		// part 1: set up proxy (if any)
+		transport := &http.Transport{}
+
+		if !noProxy {
+			transport.Proxy = http.ProxyFromEnvironment
+		}
+
+		// part 2: bootstrap client
+		// bootstrap client
+		client := http.Client{
+			Timeout: timeout,
+			Transport: transport,
+		}
+
 		// Get the request ready - Headers, verb, etc
 		request, err := http.NewRequest(httpVerb, url.String(), nil)
 		request.Host = hostHeader
