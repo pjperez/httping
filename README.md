@@ -46,9 +46,13 @@ httping -url requested_url [OPTIONS]
   Requested URL. If no protocol is specified with http:// or https:// the system will use http://
 
 -count *10*
-  Number of requests to send (0 means infinite).
+  Number of requests to send [0 means infinite].
   Default: 10
-  
+
+-timeout 2000
+  Timeout in milliseconds
+  Default: 2000 (2 seconds)
+
 -httpverb *GET*
   Verb to use for the HTTP request: GET or HEAD.
   Default: GET
