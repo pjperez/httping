@@ -151,9 +151,6 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 	// Change request timeout to 2 seconds
 	timeout := time.Duration(2 * time.Second)
 
-	// set up proxy (if any)
-	transport := &http.Transport{}
-
 	// Send requests for url, "count" times
 	for i = 1; count >= i && fBreak == 0; i++ {
 		// More stateless approach, and as part of it,
