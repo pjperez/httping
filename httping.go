@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/montanaflynn/stats"
-    "github.com/rapid7/go-get-proxied/proxy"
+	"github.com/rapid7/go-get-proxied/proxy"
 )
 
 const httpingVersion = "0.9.1"
