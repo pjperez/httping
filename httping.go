@@ -52,7 +52,7 @@ func main() {
 	// Available flags
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
-	countPtr := flag.Int("count", 10, "Number of requests to send")
+	countPtr := flag.Int("count", 10, "Number of requests to send (0 means infinite)")
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
@@ -84,14 +84,6 @@ func main() {
 	if len(urlStr) < 1 {
 		flag.Usage()
 		fmt.Printf("\nYou haven't specified a URL to test!\n\n")
-
-		os.Exit(1)
-	}
-
-	// Exit if the number of probes is zero, print usage
-	if *countPtr < 1 {
-		flag.Usage()
-		fmt.Printf("\nNumber of probes has to be greater than 0!\n\n")
 
 		os.Exit(1)
 	}
@@ -154,7 +146,7 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 	transport := &http.Transport{}
 
 	// Send requests for url, "count" times
-	for i = 1; count >= i && fBreak == 0; i++ {
+	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
 		// More stateless approach, and as part of it,
 		// each time - init new client - safer in the dynamic environment where proxy changes often
 		// (compute time is cheaper than having to debug)
@@ -225,7 +217,11 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 		}
 
-		time.Sleep(1e9)
+		// Don't sleep after the last needed ping, so results can be displayed 1 second faster
+		// (quick mathematics are cheap, 1 second is long)
+		if (count-i) > 1 {
+			time.Sleep(1e9)
+		}
 
 		c := make(chan os.Signal, 1)
 
