@@ -54,6 +54,7 @@ func main() {
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
 	countPtr := flag.Int("count", 10, "Number of requests to send (0 means infinite)")
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
+	timeoutPtr := flag.Int("timeout", 2000, "Timeout in milliseconds")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
 	noProxyPtr := flag.Bool("noproxy", false, "If true, ignores system proxy settings")
@@ -84,6 +85,22 @@ func main() {
 	if len(urlStr) < 1 {
 		flag.Usage()
 		fmt.Printf("\nYou haven't specified a URL to test!\n\n")
+
+		os.Exit(1)
+	}
+
+	// Exit if the number of probes is zero, print usage
+	if *countPtr < 1 {
+		flag.Usage()
+		fmt.Printf("\nNumber of probes has to be greater than 0!\n\n")
+
+		os.Exit(1)
+	}
+
+	// Exit if timeout is zero, print usage
+	if *timeoutPtr < 0 {
+		flag.Usage()
+		fmt.Printf("\nTimeout has to be greater than 0!!\n\n")
 
 		os.Exit(1)
 	}
@@ -128,10 +145,8 @@ func main() {
 	if jsonResults == false {
 		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
 	}
-	ping(httpVerb, url, *countPtr, hostHeader, jsonResults, noProxy)
-}
 
-func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResults bool, noProxy bool) {
+func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader string, jsonResults bool, noProxy bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -141,8 +156,11 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 	var responseTimes []float64
 	fBreak := 0
 
-	// Change request timeout to 2 seconds
-	timeout := time.Duration(2 * time.Second)
+	// Change request timeout to max_timeout seconds
+	timeout := time.Duration(max_timeout) * time.Millisecond
+	client := http.Client{
+		Timeout: timeout,
+	}
 	transport := &http.Transport{}
 
 	// Send requests for url, "count" times
