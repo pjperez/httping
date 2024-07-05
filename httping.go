@@ -205,7 +205,11 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 		}
 
-		time.Sleep(1e9)
+		// Don't sleep after the last needed ping, so results can be displayed 1 second faster
+		// (quick mathematics are cheap, 1 second is long)
+		if (count-i) > 1 {
+			time.Sleep(1e9)
+		}
 
 		c := make(chan os.Signal, 1)
 
