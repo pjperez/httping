@@ -46,7 +46,7 @@ httping -url requested_url [OPTIONS]
   Requested URL. If no protocol is specified with http:// or https:// the system will use http://
 
 -count *10*
-  Number of requests to send.
+  Number of requests to send (0 means infinite).
   Default: 10
   
 -httpverb *GET*
@@ -58,6 +58,9 @@ httping -url requested_url [OPTIONS]
 
 -json
   If specified, outputs the results in json format
+
+-noProxy
+  If specified, ignores system proxy settings
 ```
 
 #### Example
