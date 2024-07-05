@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/montanaflynn/stats"
+	"github.com/rapid7/go-get-proxied/proxy"
 )
 
 const httpingVersion = "0.9.1"
@@ -55,12 +56,14 @@ func main() {
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
+	noProxyPtr := flag.Bool("noproxy", false, "If true, ignores system proxy settings")
 
 	flag.Parse()
 
 	urlStr := *urlPtr
 	httpVerb := *httpverbPtr
 	jsonResults := *jsonResultsPtr
+	noProxy := *noProxyPtr
 
 	if jsonResults == false {
 		fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
@@ -125,10 +128,10 @@ func main() {
 	if jsonResults == false {
 		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
 	}
-	ping(httpVerb, url, *countPtr, hostHeader, jsonResults)
+	ping(httpVerb, url, *countPtr, hostHeader, jsonResults, noProxy)
 }
 
-func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResults bool) {
+func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResults bool, noProxy bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -140,12 +143,29 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 	// Change request timeout to 2 seconds
 	timeout := time.Duration(2 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
+	transport := &http.Transport{}
 
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
+		// More stateless approach, and as part of it,
+		// each time - init new client - safer in the dynamic environment where proxy changes often
+		// (compute time is cheaper than having to debug)
+		// part 1: set up proxy (if any)
+		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
+		if !noProxy {
+			p := proxy.NewProvider("").GetProxy("https", "")
+			if p != nil {
+				transport.Proxy = http.ProxyURL(p.URL())
+			}
+		}
+
+		// part 2: bootstrap client
+		// bootstrap client
+		client := http.Client{
+			Timeout: timeout,
+			Transport: transport,
+		}
+
 		// Get the request ready - Headers, verb, etc
 		request, err := http.NewRequest(httpVerb, url.String(), nil)
 		request.Host = hostHeader
