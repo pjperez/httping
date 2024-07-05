@@ -58,6 +58,9 @@ httping -url requested_url [OPTIONS]
 
 -json
   If specified, outputs the results in json format
+
+-noProxy
+  If specified, ignores system proxy settings
 ```
 
 #### Example
