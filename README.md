@@ -72,7 +72,7 @@ httping -url requested_url [OPTIONS]
 ```
 PS C:\temp> ./httping.exe -url https://wormhole.network -count 10
 
-httping 0.9.1 - A tool to measure RTT on HTTP/S requests
+httping 0.10.0 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
 HTTP GET to wormhole.network (https://wormhole.network):
 connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=381.99 ms
@@ -117,7 +117,7 @@ Continuous monitoring of the connection quality,
 ```
 $ httping.exe -url http://detectportal.firefox.com/success.txt -count 0 -timeout 1000
 
-httping 0.9.1 - A tool to measure RTT on HTTP/S requests
+httping 0.10.0 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
 HTTP GET to detectportal.firefox.com (http://detectportal.firefox.com/success.txt):
 Timeout when connecting to http://detectportal.firefox.com/success.txt
