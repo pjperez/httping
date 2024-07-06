@@ -151,9 +151,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 	var responseTimes []float64
 	fBreak := 0
 
-	// Change request timeout to max_timeout seconds
-	timeout := time.Duration(max_timeout) * time.Millisecond
-	transport := &http.Transport{}
+	
 
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
@@ -162,6 +160,9 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		// (compute time is cheaper than having to debug)
 		// part 1: set up proxy (if any)
 		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
+		transport := &http.Transport{}
+		// Change request timeout to max_timeout seconds
+		timeout := time.Duration(max_timeout) * time.Millisecond
 		proxyInformation := "Not using proxy"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
