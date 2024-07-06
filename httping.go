@@ -1,4 +1,4 @@
-// httping 0.9.1 - A tool to measure RTT on HTTP/S requests
+// httping 0.10.0 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -26,7 +26,7 @@ import (
 	"github.com/rapid7/go-get-proxied/proxy"
 )
 
-const httpingVersion = "0.9.1"
+const httpingVersion = "0.10.0"
 
 //const jsonResults = true
 
