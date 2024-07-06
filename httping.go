@@ -162,9 +162,11 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		// (compute time is cheaper than having to debug)
 		// part 1: set up proxy (if any)
 		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
+		proxyInformation := "Not using proxy"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
 			if p != nil {
+				proxyInformation = fmt.Sprintf("Using proxy: %s", p)
 				transport.Proxy = http.ProxyURL(p.URL())
 			}
 		}
@@ -187,7 +189,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		responseTime := time.Since(timeStart)
 
 		if err != nil || errRequest != nil {
-			fmt.Println("Timeout when connecting to", url)
+			fmt.Println("Timeout when connecting to %s, %s", url, proxyInformation)
 
 		} else {
 			// Add all the response times to calculate the average later
@@ -216,7 +218,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 				fmt.Println(string(resultsMarshaled))
 
 			} else {
-				fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+				fmt.Printf("connected to %s, %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, proxyInformation, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 			}
 
 			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
