@@ -96,6 +96,8 @@ func main() {
 
 		os.Exit(1)
 	}
+	// Change request timeout to requested number of milliseconds
+	timeout := time.Duration(*timeoutPtr) * time.Millisecond
 
 	// Check what protocol has been specified in the URL by checking the first 7 or 8 chars.
 	// If none specified, fall back to HTTP
@@ -138,10 +140,10 @@ func main() {
 		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
 	}
 
-	ping(httpVerb, url, *countPtr, *timeoutPtr, hostHeader, jsonResults, noProxy)
+	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, noProxy)
 }
 
-func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader string, jsonResults bool, noProxy bool) {
+func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, noProxy bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -159,8 +161,6 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		// part 1: set up proxy (if any)
 		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
 		transport := &http.Transport{}
-		// Change request timeout to max_timeout seconds
-		timeout := time.Duration(max_timeout) * time.Millisecond
 		proxyInformation := "proxy=None"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
