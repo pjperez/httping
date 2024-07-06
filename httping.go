@@ -151,8 +151,6 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 	var responseTimes []float64
 	fBreak := 0
 
-	
-
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
 		// More stateless approach, and as part of it,
