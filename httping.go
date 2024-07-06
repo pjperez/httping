@@ -189,7 +189,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		responseTime := time.Since(timeStart)
 
 		if err != nil || errRequest != nil {
-			fmt.Println("Timeout when connecting to %s, %s", url, proxyInformation)
+			fmt.Println("Timeout when connecting to", url, "|", proxyInformation)
 
 		} else {
 			// Add all the response times to calculate the average later
