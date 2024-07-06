@@ -163,11 +163,11 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		transport := &http.Transport{}
 		// Change request timeout to max_timeout seconds
 		timeout := time.Duration(max_timeout) * time.Millisecond
-		proxyInformation := "Not using proxy"
+		proxyInformation := "proxy: None"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
 			if p != nil {
-				proxyInformation = fmt.Sprintf("Using proxy: %s", p)
+				proxyInformation = fmt.Sprintf("proxy: %s", p)
 				transport.Proxy = http.ProxyURL(p.URL())
 			}
 		}
@@ -190,7 +190,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		responseTime := time.Since(timeStart)
 
 		if err != nil || errRequest != nil {
-			fmt.Println("Timeout when connecting to", url, "|", proxyInformation)
+			fmt.Println("Timeout when connecting to", url)
 
 		} else {
 			// Add all the response times to calculate the average later
