@@ -163,7 +163,7 @@ func ping(httpVerb string, url *url.URL, count int, max_timeout int, hostHeader 
 		// part 1: set up proxy (if any)
 		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
 		if !noProxy {
-			p := proxy.NewProvider("").GetProxy("https", "")
+			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
 			if p != nil {
 				transport.Proxy = http.ProxyURL(p.URL())
 			}
