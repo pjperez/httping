@@ -1,4 +1,4 @@
-// httping 0.9.1 - A tool to measure RTT on HTTP/S requests
+// httping 0.10.0 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -23,9 +23,10 @@ import (
 	"strconv"
 
 	"github.com/montanaflynn/stats"
+	"github.com/rapid7/go-get-proxied/proxy"
 )
 
-const httpingVersion = "0.9.1"
+const httpingVersion = "0.10.0"
 
 //const jsonResults = true
 
@@ -51,16 +52,19 @@ func main() {
 	// Available flags
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
-	countPtr := flag.Int("count", 10, "Number of requests to send")
+	countPtr := flag.Int("count", 10, "Number of requests to send [0 means infinite]")
 	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
+	timeoutPtr := flag.Int("timeout", 2000, "Timeout in milliseconds")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
+	noProxyPtr := flag.Bool("noproxy", false, "If true, ignores system proxy settings")
 
 	flag.Parse()
 
 	urlStr := *urlPtr
 	httpVerb := *httpverbPtr
 	jsonResults := *jsonResultsPtr
+	noProxy := *noProxyPtr
 
 	if jsonResults == false {
 		fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
@@ -85,13 +89,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Exit if the number of probes is zero, print usage
-	if *countPtr < 1 {
+	// Exit if timeout is zero, print usage
+	if *timeoutPtr < 0 {
 		flag.Usage()
-		fmt.Printf("\nNumber of probes has to be greater than 0!\n\n")
+		fmt.Printf("\nTimeout has to be greater than 0!!\n\n")
 
 		os.Exit(1)
 	}
+	// Change request timeout to requested number of milliseconds
+	timeout := time.Duration(*timeoutPtr) * time.Millisecond
 
 	// Check what protocol has been specified in the URL by checking the first 7 or 8 chars.
 	// If none specified, fall back to HTTP
@@ -133,10 +139,11 @@ func main() {
 	if jsonResults == false {
 		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
 	}
-	ping(httpVerb, url, *countPtr, hostHeader, jsonResults)
+
+	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, noProxy)
 }
 
-func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResults bool) {
+func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, noProxy bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -146,14 +153,30 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 	var responseTimes []float64
 	fBreak := 0
 
-	// Change request timeout to 2 seconds
-	timeout := time.Duration(2 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	// Send requests for url, "count" times
-	for i = 1; count >= i && fBreak == 0; i++ {
+	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
+		// More stateless approach, and as part of it,
+		// each time - init new client - safer in the dynamic environment where proxy changes often
+		// (compute time is cheaper than having to debug)
+		// part 1: set up proxy (if any)
+		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
+		transport := &http.Transport{}
+		proxyInformation := "proxy=None"
+		if !noProxy {
+			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
+			if p != nil {
+				proxyInformation = fmt.Sprintf("proxy=%s", p)
+				transport.Proxy = http.ProxyURL(p.URL())
+			}
+		}
+
+		// part 2: bootstrap client
+		// bootstrap client
+		client := http.Client{
+			Timeout: timeout,
+			Transport: transport,
+		}
+
 		// Get the request ready - Headers, verb, etc
 		request, err := http.NewRequest(httpVerb, url.String(), nil)
 		request.Host = hostHeader
@@ -165,7 +188,7 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 		responseTime := time.Since(timeStart)
 
 		if err != nil || errRequest != nil {
-			fmt.Println("Timeout when connecting to", url)
+			fmt.Println("Timeout when connecting to", url, "|", proxyInformation)
 
 		} else {
 			// Add all the response times to calculate the average later
@@ -194,7 +217,7 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 				fmt.Println(string(resultsMarshaled))
 
 			} else {
-				fmt.Printf("connected to %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+				fmt.Printf("connected to %s, %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, proxyInformation, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 			}
 
 			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
@@ -205,7 +228,11 @@ func ping(httpVerb string, url *url.URL, count int, hostHeader string, jsonResul
 
 		}
 
-		time.Sleep(1e9)
+		// Don't sleep after the last needed ping, so results can be displayed 1 second faster
+		// (quick mathematics are cheap, 1 second is long)
+		if ((count-i) > 1) || (count <= 0) {
+			time.Sleep(1e9)
+		}
 
 		c := make(chan os.Signal, 1)
 

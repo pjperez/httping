@@ -46,9 +46,13 @@ httping -url requested_url [OPTIONS]
   Requested URL. If no protocol is specified with http:// or https:// the system will use http://
 
 -count *10*
-  Number of requests to send.
+  Number of requests to send [0 means infinite].
   Default: 10
-  
+
+-timeout 2000
+  Timeout in milliseconds
+  Default: 2000 (2 seconds)
+
 -httpverb *GET*
   Verb to use for the HTTP request: GET or HEAD.
   Default: GET
@@ -58,6 +62,9 @@ httping -url requested_url [OPTIONS]
 
 -json
   If specified, outputs the results in json format
+
+-noProxy
+  If specified, ignores system proxy settings
 ```
 
 #### Example
@@ -65,7 +72,7 @@ httping -url requested_url [OPTIONS]
 ```
 PS C:\temp> ./httping.exe -url https://wormhole.network -count 10
 
-httping 0.9.1 - A tool to measure RTT on HTTP/S requests
+httping 0.10.0 - A tool to measure RTT on HTTP/S requests
 Help: httping -h
 HTTP GET to wormhole.network (https://wormhole.network):
 connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=381.99 ms
@@ -103,6 +110,25 @@ PS C:\temp> .\httping.exe -url https://wormhole.network -count 5 -json
 {"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":4,"httpStatus":200,"bytes":10991,"rtt":121.3327}
 {"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":5,"httpStatus":200,"bytes":10991,"rtt":71.4523}
 ```
+
+#### Example 3
+
+Continuous monitoring of the connection quality,  
+```
+$ httping.exe -url http://detectportal.firefox.com/success.txt -count 0 -timeout 1000
+
+httping 0.10.0 - A tool to measure RTT on HTTP/S requests
+Help: httping -h
+HTTP GET to detectportal.firefox.com (http://detectportal.firefox.com/success.txt):
+Timeout when connecting to http://detectportal.firefox.com/success.txt
+Timeout when connecting to http://detectportal.firefox.com/success.txt
+connected to http://detectportal.firefox.com/success.txt, seq=3, httpVerb=GET, httpStatus=200, bytes=8, RTT=882.24 ms
+Timeout when connecting to http://detectportal.firefox.com/success.txt
+Timeout when connecting to http://detectportal.firefox.com/success.txt
+Timeout when connecting to http://detectportal.firefox.com/success.txt
+connected to http://detectportal.firefox.com/success.txt, seq=7, httpVerb=GET, httpStatus=200, bytes=8, RTT=928.17 ms
+```
+
 ### Help
 httping help
 
