@@ -153,6 +153,12 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	var responseTimes []float64
 	fBreak := 0
 
+	// Ignore redirects, for more information:
+	// https://stackoverflow.com/a/38150816
+	checkRedirectFunc := func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
 		// More stateless approach, and as part of it,
@@ -175,6 +181,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		client := http.Client{
 			Timeout: timeout,
 			Transport: transport,
+			CheckRedirect: checkRedirectFunc,
 		}
 
 		// Get the request ready - Headers, verb, etc
