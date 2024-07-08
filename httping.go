@@ -227,8 +227,9 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				fmt.Printf("connected to %s, %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, proxyInformation, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 			}
 
-			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
-			if result.StatusCode == 200 {
+			// Count how many probes are successful, i.e. how many get a 100-399 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
+			// Read more about HTTP status codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+			if result.StatusCode >= 100 && result.StatusCode < 400 {
 				successfulProbes++
 				responseTimes = append(responseTimes, float64(responseTime))
 			}
