@@ -155,11 +155,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	var responseTimes []float64
 	fBreak := 0
 
-
-	checkRedirectFunc := func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
+	var checkRedirectFunc func(req *http.Request, via []*http.Request) error
 	if followRedirects {
 		// This is the default behavior which follows redirects
 		checkRedirectFunc = nil
@@ -170,7 +166,6 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				return http.ErrUseLastResponse
 		}
 	}
-
 
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
