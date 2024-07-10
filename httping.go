@@ -57,6 +57,7 @@ func main() {
 	timeoutPtr := flag.Int("timeout", 2000, "Timeout in milliseconds")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
+	followRedirectsPtr := flag.Bool("followredirects", false, "If true, follows redirects, which may result in higher RTT")
 	noProxyPtr := flag.Bool("noproxy", false, "If true, ignores system proxy settings")
 
 	flag.Parse()
@@ -65,6 +66,7 @@ func main() {
 	httpVerb := *httpverbPtr
 	jsonResults := *jsonResultsPtr
 	noProxy := *noProxyPtr
+	followRedirects := *followRedirectsPtr
 
 	if jsonResults == false {
 		fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
@@ -140,10 +142,10 @@ func main() {
 		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
 	}
 
-	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, noProxy)
+	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, followRedirects, noProxy)
 }
 
-func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, noProxy bool) {
+func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool) {
 	// This function is responsible to send the requests, count the time and show statistics when finished
 
 	// Initialise needed variables
@@ -152,6 +154,18 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	successfulProbes := 0
 	var responseTimes []float64
 	fBreak := 0
+
+	var checkRedirectFunc func(req *http.Request, via []*http.Request) error
+	if followRedirects {
+		// This is the default behavior which follows redirects
+		checkRedirectFunc = nil
+	} else {
+		// Ignore redirects, for more information:
+		// https://stackoverflow.com/a/38150816
+		checkRedirectFunc = func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+		}
+	}
 
 	// Send requests for url, "count" times
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
@@ -175,6 +189,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		client := http.Client{
 			Timeout: timeout,
 			Transport: transport,
+			CheckRedirect: checkRedirectFunc,
 		}
 
 		// Get the request ready - Headers, verb, etc
@@ -220,8 +235,9 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				fmt.Printf("connected to %s, %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, proxyInformation, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
 			}
 
-			// Count how many probes are successful, i.e. how many get a 200 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
-			if result.StatusCode == 200 {
+			// Count how many probes are successful, i.e. how many get a 100-399 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
+			// Read more about HTTP status codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+			if result.StatusCode >= 100 && result.StatusCode < 400 {
 				successfulProbes++
 				responseTimes = append(responseTimes, float64(responseTime))
 			}
