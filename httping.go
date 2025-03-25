@@ -174,7 +174,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		// (compute time is cheaper than having to debug)
 		// part 1: set up proxy (if any)
 		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
-		transport := &http.Transport{}
+		transport := &http.Transport{ForceAttemptHTTP2: true,}
 		proxyInformation := "proxy=None"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
