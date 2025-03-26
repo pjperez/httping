@@ -7,6 +7,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -26,9 +27,47 @@ import (
 	"github.com/rapid7/go-get-proxied/proxy"
 )
 
-const httpingVersion = "0.10.0"
+const (
+	httpingVersion = "0.10.0"
+	timeFormat     = "2006-01-02 15:04:05 MST"
+)
 
-//const jsonResults = true
+// Custom logger type
+type AppLogger struct {
+	*log.Logger
+}
+
+var (
+	infoLogger  *AppLogger
+	warnLogger  *AppLogger
+	errorLogger *AppLogger
+)
+
+// Initialize loggers
+func initLoggers(jsonOutput bool) {
+	flags := log.Lmsgprefix
+	output := io.Discard // Default to no output for JSON mode
+	if !jsonOutput {
+		output = os.Stdout
+	}
+
+	infoLogger = &AppLogger{log.New(output, "INFO: ", flags)}
+	warnLogger = &AppLogger{log.New(output, "WARN: ", flags)}
+	errorLogger = &AppLogger{log.New(os.Stderr, "ERROR: ", flags)} // Keep errors in stderr
+}
+
+// Log functions with consistent formatting
+func (l *AppLogger) Info(format string, v ...interface{}) {
+	l.Printf("[%s] %s", time.Now().Format(timeFormat), fmt.Sprintf(format, v...))
+}
+
+func (l *AppLogger) Warn(format string, v ...interface{}) {
+	l.Printf("[%s] %s", time.Now().Format(timeFormat), fmt.Sprintf(format, v...))
+}
+
+func (l *AppLogger) Error(format string, v ...interface{}) {
+	l.Printf("[%s] %s", time.Now().Format(timeFormat), fmt.Sprintf(format, v...))
+}
 
 // Reply is a data structure for the server replies
 type Reply struct {
@@ -37,7 +76,7 @@ type Reply struct {
 	Time     time.Time
 }
 
-// Result is the struct to generate the metada json results
+// Result is the struct to generate the metadata json results
 type Result struct {
 	Host        string  `json:"host"`
 	HTTPVerb    string  `json:"httpVerb"`
@@ -59,8 +98,15 @@ func main() {
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
 	followRedirectsPtr := flag.Bool("followredirects", false, "If true, follows redirects, which may result in higher RTT")
 	noProxyPtr := flag.Bool("noproxy", false, "If true, ignores system proxy settings")
+	insecureTLS := flag.Bool("insecure", false, "Skip TLS certificate verification")
 
 	flag.Parse()
+
+	initLoggers(*jsonResultsPtr)
+
+	// Log startup information
+	infoLogger.Info("httping %s starting", httpingVersion)
+	defer infoLogger.Info("httping completed")
 
 	urlStr := *urlPtr
 	httpVerb := *httpverbPtr
@@ -68,113 +114,104 @@ func main() {
 	noProxy := *noProxyPtr
 	followRedirects := *followRedirectsPtr
 
-	if jsonResults == false {
-		fmt.Println("\nhttping " + httpingVersion + " - A tool to measure RTT on HTTP/S requests")
-		fmt.Println("Help: httping -h")
+	if !jsonResults {
+		infoLogger.Info("HTTP %s to %s", httpVerb, urlStr)
+		infoLogger.Info("Use -h for help")
 	}
 
 	// If listener mode is selected, ignore the rest of the args
 	if *listenPtr > 0 {
 		listenPort := strconv.Itoa(*listenPtr)
-		fmt.Println("Listening on port " + listenPort)
+		infoLogger.Info("Starting listener on port %s", listenPort)
 
 		http.HandleFunc("/", serverRESPONSE)
-		http.ListenAndServe(":"+listenPort, nil)
-
-	}
-
-	// Exit if URL is not specified, print usage
-	if len(urlStr) < 1 {
-		flag.Usage()
-		fmt.Printf("\nYou haven't specified a URL to test!\n\n")
-
-		os.Exit(1)
-	}
-
-	// Exit if timeout is zero, print usage
-	if *timeoutPtr < 0 {
-		flag.Usage()
-		fmt.Printf("\nTimeout has to be greater than 0!!\n\n")
-
-		os.Exit(1)
-	}
-	// Change request timeout to requested number of milliseconds
-	timeout := time.Duration(*timeoutPtr) * time.Millisecond
-
-	// Check what protocol has been specified in the URL by checking the first 7 or 8 chars.
-	// If none specified, fall back to HTTP
-	if len(urlStr) > 6 {
-		if urlStr[:7] != "http://" {
-			if urlStr[:8] != "https://" {
-				if strings.Contains(urlStr, "://") {
-					fmt.Println("\n\nWrong protocol specified, httping only supports HTTP and HTTPS")
-					os.Exit(1)
-				}
-				fmt.Printf("\n\nNo protocol specified, falling back to HTTP\n\n")
-
-				urlStr = "http://" + urlStr
-
-			}
+		if err := http.ListenAndServe(":"+listenPort, nil); err != nil {
+			errorLogger.Error("Listener failed: %v", err)
+			os.Exit(1)
 		}
-	} else {
-		fmt.Println()
-		os.Exit(1)
-	}
-
-	// Parse URL and fail if the host can't be resolved.
-	url, err := url.Parse(urlStr)
-
-	if err != nil {
-		fmt.Println("Cannot resolve: " + urlStr)
-		os.Exit(1)
 		return
 	}
 
-	// If a custom host header is specified, use it. Otherwise host header = url.Host
-	var hostHeader string
-	if *hostHeaderPtr != "" {
-		hostHeader = *hostHeaderPtr
+	// Validate URL
+	if len(urlStr) < 1 {
+		flag.Usage()
+		errorLogger.Error("No URL specified")
+		os.Exit(1)
+	}
+
+	// Validate timeout
+	if *timeoutPtr < 0 {
+		flag.Usage()
+		errorLogger.Error("Timeout must be greater than 0")
+		os.Exit(1)
+	}
+	timeout := time.Duration(*timeoutPtr) * time.Millisecond
+
+	// Handle protocol
+	if len(urlStr) > 6 {
+		if urlStr[:7] != "http://" && urlStr[:8] != "https://" {
+			if strings.Contains(urlStr, "://") {
+				errorLogger.Error("Unsupported protocol (only HTTP/HTTPS allowed)")
+				os.Exit(1)
+			}
+			warnLogger.Warn("No protocol specified, defaulting to HTTP")
+			urlStr = "http://" + urlStr
+		}
 	} else {
+		errorLogger.Error("Invalid URL format")
+		os.Exit(1)
+	}
+
+	// Parse URL
+	url, err := url.Parse(urlStr)
+	if err != nil {
+		errorLogger.Error("URL parse error: %v", err)
+		os.Exit(1)
+	}
+
+	// Set host header
+	hostHeader := *hostHeaderPtr
+	if hostHeader == "" {
 		hostHeader = url.Host
 	}
 
-	if jsonResults == false {
-		fmt.Printf("HTTP %s to %s (%s):\n", httpVerb, url.Host, urlStr)
-	}
-
-	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, followRedirects, noProxy)
+	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, url.Host, urlStr)
+	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
 }
 
-func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool) {
-	// This function is responsible to send the requests, count the time and show statistics when finished
-
-	// Initialise needed variables
+func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
 	timeTotal := time.Duration(0)
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
 	fBreak := 0
 
+	// Setup redirect policy
 	var checkRedirectFunc func(req *http.Request, via []*http.Request) error
-	if followRedirects {
-		// This is the default behavior which follows redirects
-		checkRedirectFunc = nil
-	} else {
-		// Ignore redirects, for more information:
-		// https://stackoverflow.com/a/38150816
+	if !followRedirects {
 		checkRedirectFunc = func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
+			return http.ErrUseLastResponse
 		}
 	}
 
-	// Send requests for url, "count" times
+	// Setup signal handling
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		warnLogger.Warn("Interrupt signal received, stopping...")
+		fBreak = 1
+	}()
+
 	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
-		// More stateless approach, and as part of it,
-		// each time - init new client - safer in the dynamic environment where proxy changes often
-		// (compute time is cheaper than having to debug)
-		// part 1: set up proxy (if any)
-		// Thanks, https://github.com/keyring-so/keyring-desktop/blob/9c6ca18257fee150f922d7559a85e7270373bcdc/app.go#L80
-		transport := &http.Transport{ForceAttemptHTTP2: true,}
+		transport := &http.Transport{
+			ForceAttemptHTTP2: true,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: insecureTLS,
+				MinVersion:         tls.VersionTLS12,
+			},
+		}
+
 		proxyInformation := "proxy=None"
 		if !noProxy {
 			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
@@ -184,149 +221,139 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			}
 		}
 
-		// part 2: bootstrap client
-		// bootstrap client
 		client := http.Client{
-			Timeout: timeout,
-			Transport: transport,
+			Timeout:       timeout,
+			Transport:     transport,
 			CheckRedirect: checkRedirectFunc,
 		}
 
-		// Get the request ready - Headers, verb, etc
 		request, err := http.NewRequest(httpVerb, url.String(), nil)
+		if err != nil {
+			errorLogger.Error("Request creation failed: %v", err)
+			continue
+		}
 		request.Host = hostHeader
 		request.Header.Set("User-Agent", "httping "+httpingVersion)
 
-		// Send request and measure time to completion
 		timeStart := time.Now()
 		result, errRequest := client.Do(request)
 		responseTime := time.Since(timeStart)
 
 		if err != nil || errRequest != nil {
-			fmt.Println("Timeout when connecting to", url, "|", proxyInformation)
-
-		} else {
-			// Add all the response times to calculate the average later
-			timeTotal += responseTime
-
-			// Calculate the downloaded bytes
-			body, _ := ioutil.ReadAll(result.Body)
-			bytes := len(body)
-
-			// Print result on screen
-			if jsonResults == true {
-
-				// Get the json ready
-				results := &Result{
-					Host:        url.Host,
-					HTTPVerb:    httpVerb,
-					HostHeaders: hostHeader,
-					Seq:         i,
-					HTTPStatus:  result.StatusCode,
-					Bytes:       bytes,
-					RTT:         float32(responseTime) / 1e6,
+			if tlsErr, ok := errRequest.(*tls.CertificateVerificationError); ok {
+				errorLogger.Error("TLS verification failed: %v", tlsErr)
+				for i, cert := range tlsErr.UnverifiedCertificates {
+					errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
+						i+1,
+						cert.Subject.CommonName,
+						cert.Issuer.CommonName,
+						cert.NotAfter.Format("2006-01-02"))
 				}
-
-				resultsMarshaled, _ := json.Marshal(results)
-
-				fmt.Println(string(resultsMarshaled))
-
+				if !insecureTLS {
+					errorLogger.Error("Use -insecure to bypass certificate validation")
+					return
+				}
+				warnLogger.Warn("Proceeding with insecure connection")
 			} else {
-				fmt.Printf("connected to %s, %s, seq=%d, httpVerb=%s, httpStatus=%d, bytes=%d, RTT=%.2f ms\n", url, proxyInformation, i, httpVerb, result.StatusCode, bytes, float32(responseTime)/1e6)
+				warnLogger.Warn("Request failed to %s | %s | Error: %v", url, proxyInformation, errRequest)
 			}
-
-			// Count how many probes are successful, i.e. how many get a 100-399 HTTP StatusCode - If successful also add the result to a slice "responseTimes"
-			// Read more about HTTP status codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-			if result.StatusCode >= 100 && result.StatusCode < 400 {
-				successfulProbes++
-				responseTimes = append(responseTimes, float64(responseTime))
-			}
-
+			continue
 		}
 
-		// Don't sleep after the last needed ping, so results can be displayed 1 second faster
-		// (quick mathematics are cheap, 1 second is long)
-		if ((count-i) > 1) || (count <= 0) {
-			time.Sleep(1e9)
+		body, err := ioutil.ReadAll(result.Body)
+		result.Body.Close()
+		if err != nil {
+			warnLogger.Warn("Failed to read response body: %v", err)
+		}
+		bytes := len(body)
+
+		if jsonResults {
+			results := &Result{
+				Host:        url.Host,
+				HTTPVerb:    httpVerb,
+				HostHeaders: hostHeader,
+				Seq:         i,
+				HTTPStatus:  result.StatusCode,
+				Bytes:       bytes,
+				RTT:         float32(responseTime) / 1e6,
+			}
+			jsonData, _ := json.Marshal(results)
+			fmt.Println(string(jsonData))
+		} else {
+			infoLogger.Info("Connected to %s, %s, seq=%d, status=%d, bytes=%d, rtt=%.2fms",
+				url, proxyInformation, i, result.StatusCode, bytes, float32(responseTime)/1e6)
 		}
 
-		c := make(chan os.Signal, 1)
+		if result.StatusCode >= 100 && result.StatusCode < 400 {
+			successfulProbes++
+			responseTimes = append(responseTimes, float64(responseTime))
+		}
 
-		signal.Notify(c, os.Interrupt)
-		go func() {
-			for sig := range c {
-				_ = sig
-				// Stop the loop by enabling the fBreak flag
-				fBreak = 1
-			}
-		}()
-
+		if ((count - i) > 1) || (count <= 0) {
+			time.Sleep(1 * time.Second)
+		}
 	}
 
-	// Let's calculate and spill some results
-	// 1. Average response time
-	timeAverage := time.Duration(int64(0))
-	if successfulProbes > 0 {
-		timeAverage = time.Duration(int64(timeTotal) / int64(successfulProbes))
-	} else {
-		fmt.Println("All probes failed")
+	if successfulProbes == 0 {
+		errorLogger.Error("All probes failed")
 		os.Exit(1)
 	}
 
-	// 2. Min and Max response times
-	var biggest float64
-	smallest := float64(1000000000)
-
-	for _, v := range responseTimes {
-
-		if v > biggest {
-			biggest = v
-		}
-
-		if v < smallest {
-			smallest = v
-		}
-
-	}
-
-	// 3. Median response time
+	// Calculate statistics
+	timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
+	min, max := calculateMinMax(responseTimes)
 	median, _ := stats.Median(responseTimes)
+	p90, _ := stats.Percentile(responseTimes, 90)
+	p75, _ := stats.Percentile(responseTimes, 75)
+	p50, _ := stats.Percentile(responseTimes, 50)
+	p25, _ := stats.Percentile(responseTimes, 25)
 
-	// 4. Percentile
-	percentile90, _ := stats.Percentile(responseTimes, float64(90))
-	percentile75, _ := stats.Percentile(responseTimes, float64(75))
-	percentile50, _ := stats.Percentile(responseTimes, float64(50))
-	percentile25, _ := stats.Percentile(responseTimes, float64(25))
-
-	// Print it all!!!
-	if jsonResults == true {
-
-	} else {
-		fmt.Println("\nProbes sent:", i-1, "\nSuccessful responses:", successfulProbes, "\n% of requests failed:", float64(100-(successfulProbes*100)/(i-1)), "\nMin response time:", time.Duration(smallest), "\nAverage response time:", timeAverage, "\nMedian response time:", time.Duration(median), "\nMax response time:", time.Duration(biggest))
-
-		fmt.Println("\n90% of requests were faster than:", time.Duration(percentile90), "\n75% of requests were faster than:", time.Duration(percentile75), "\n50% of requests were faster than:", time.Duration(percentile50), "\n25% of requests were faster than:", time.Duration(percentile25))
+	if !jsonResults {
+		failureRate := float64(100 - (successfulProbes*100)/(i-1))
+		infoLogger.Info("Results - Probes: %d, Success: %d, Failed: %.1f%%",
+			i-1, successfulProbes, failureRate)
+		infoLogger.Info("Timing - Min: %v, Avg: %v, Med: %v, Max: %v",
+			time.Duration(min), timeAverage, time.Duration(median), time.Duration(max))
+		infoLogger.Info("Percentiles - P90: %v, P75: %v, P50: %v, P25: %v",
+			time.Duration(p90), time.Duration(p75), time.Duration(p50), time.Duration(p25))
 	}
 }
 
+func calculateMinMax(times []float64) (min, max float64) {
+	min = times[0]
+	max = times[0]
+	for _, t := range times {
+		if t < min {
+			min = t
+		}
+		if t > max {
+			max = t
+		}
+	}
+	return min, max
+}
+
 func serverRESPONSE(w http.ResponseWriter, r *http.Request) {
-	hostname, err := os.Hostname() // Get the local hostname
+	hostname, _ := os.Hostname()
+	clientSocket := r.RemoteAddr
+	clientParts := strings.Split(clientSocket, ":")
+	clientIP := strings.Join(clientParts[:len(clientParts)-1], ":")
 
-	// Get the client's IP address.
-	// RemoteAddr returns the client IP address with the port after a colon
-	// We split the client IP + port based on colon(s) and only remove
-	// after the last one, so we don't break IPv6
-	clientsocket := r.RemoteAddr
-	clientipMap := strings.Split(clientsocket, ":")
-	clientipMap = clientipMap[:len(clientipMap)-1]
-	clientip := strings.Join(clientipMap, ":")
-
-	response := Reply{hostname, clientip, time.Now()} // Construct the response with the gathered data
-
-	// Convert to json
-	jsonRESPONSE, err := json.Marshal(response)
-	if err != nil {
-		log.Output(0, "json conversion failed")
+	response := Reply{
+		Hostname: hostname,
+		ClientIP: clientIP,
+		Time:     time.Now(),
 	}
 
-	io.WriteString(w, string(jsonRESPONSE)) // Send response back to client
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		errorLogger.Error("JSON marshal failed: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonData); err != nil {
+		errorLogger.Error("Response write failed: %v", err)
+	}
 }
