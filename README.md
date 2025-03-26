@@ -39,94 +39,89 @@ httping -url requested_url [OPTIONS]
 
 ##### Options
 ```
--h
-  Help
-
--url *https://github.com*
-  Requested URL. If no protocol is specified with http:// or https:// the system will use http://
-
--count *10*
-  Number of requests to send [0 means infinite].
-  Default: 10
-
--timeout 2000
-  Timeout in milliseconds
-  Default: 2000 (2 seconds)
-
--httpverb *GET*
-  Verb to use for the HTTP request: GET or HEAD.
-  Default: GET
-
--hostheader "github.com"
-  Specify a custom Host: header
-
--json
-  If specified, outputs the results in json format
-
--noProxy
-  If specified, ignores system proxy settings
+ -count int
+    	Number of requests to send [0 means infinite] (default 10)
+  -followredirects
+    	If true, follows redirects, which may result in higher RTT
+  -hostheader string
+    	Optional: Host header
+  -httpverb string
+    	HTTP Verb: Only GET or HEAD supported at the moment (default "GET")
+  -insecure
+    	Skip TLS certificate verification
+  -json
+    	If true, produces output in json format
+  -listen int
+    	Enable listener mode on specified port, e.g. '-r 80'
+  -noproxy
+    	If true, ignores system proxy settings
+  -timeout int
+    	Timeout in milliseconds (default 2000)
+  -url string
+    	Requested URL
 ```
 
 #### Example
 
 ```
-PS C:\temp> ./httping.exe -url https://wormhole.network -count 10
-
-httping 0.10.0 - A tool to measure RTT on HTTP/S requests
-Help: httping -h
-HTTP GET to wormhole.network (https://wormhole.network):
-connected to https://wormhole.network, seq=1, httpVerb=GET, httpStatus=200, bytes=10991, RTT=381.99 ms
-connected to https://wormhole.network, seq=2, httpVerb=GET, httpStatus=200, bytes=10991, RTT=169.03 ms
-connected to https://wormhole.network, seq=3, httpVerb=GET, httpStatus=200, bytes=10991, RTT=94.19 ms
-connected to https://wormhole.network, seq=4, httpVerb=GET, httpStatus=200, bytes=10991, RTT=106.94 ms
-connected to https://wormhole.network, seq=5, httpVerb=GET, httpStatus=200, bytes=10991, RTT=78.16 ms
-connected to https://wormhole.network, seq=6, httpVerb=GET, httpStatus=200, bytes=10991, RTT=121.95 ms
-connected to https://wormhole.network, seq=7, httpVerb=GET, httpStatus=200, bytes=10991, RTT=103.13 ms
-connected to https://wormhole.network, seq=8, httpVerb=GET, httpStatus=200, bytes=10991, RTT=81.28 ms
-connected to https://wormhole.network, seq=9, httpVerb=GET, httpStatus=200, bytes=10991, RTT=125.78 ms
-connected to https://wormhole.network, seq=10, httpVerb=GET, httpStatus=200, bytes=10991, RTT=81.77 ms
-
-Probes sent: 10
-Successful responses: 10
-% of requests failed: 0
-Min response time: 78.1639ms
-Average response time: 134.42187ms
-Median response time: 105.035ms
-Max response time: 381.9932ms
-
-90% of requests were faster than: 275.51005ms
-75% of requests were faster than: 125.7822ms
-50% of requests were faster than: 105.035ms
-25% of requests were faster than: 81.7667ms
+$ ./httping -url example.com -count 10
+INFO: [2025-03-26 12:03:28 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:03:28 CET] HTTP GET to example.com
+INFO: [2025-03-26 12:03:28 CET] Use -h for help
+WARN: [2025-03-26 12:03:28 CET] No protocol specified, defaulting to HTTP
+INFO: [2025-03-26 12:03:28 CET] Starting HTTP GET to example.com (http://example.com)
+INFO: [2025-03-26 12:03:28 CET] Connected to http://example.com, proxy=None, seq=1, status=200, bytes=1256, rtt=229.63ms
+INFO: [2025-03-26 12:03:30 CET] Connected to http://example.com, proxy=None, seq=2, status=200, bytes=1256, rtt=366.04ms
+INFO: [2025-03-26 12:03:31 CET] Connected to http://example.com, proxy=None, seq=3, status=200, bytes=1256, rtt=221.98ms
+INFO: [2025-03-26 12:03:32 CET] Connected to http://example.com, proxy=None, seq=4, status=200, bytes=1256, rtt=360.16ms
+INFO: [2025-03-26 12:03:34 CET] Connected to http://example.com, proxy=None, seq=5, status=200, bytes=1256, rtt=357.55ms
+INFO: [2025-03-26 12:03:35 CET] Connected to http://example.com, proxy=None, seq=6, status=200, bytes=1256, rtt=227.71ms
+INFO: [2025-03-26 12:03:36 CET] Connected to http://example.com, proxy=None, seq=7, status=200, bytes=1256, rtt=216.90ms
+INFO: [2025-03-26 12:03:38 CET] Connected to http://example.com, proxy=None, seq=8, status=200, bytes=1256, rtt=349.76ms
+INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=9, status=200, bytes=1256, rtt=368.16ms
+INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=10, status=200, bytes=1256, rtt=221.70ms
+INFO: [2025-03-26 12:03:39 CET] Results - Probes: 10, Success: 10, Failed: 0.0%
+INFO: [2025-03-26 12:03:39 CET] Timing - Min: 216.897026ms, Avg: 0s, Med: 289.693866ms, Max: 368.162583ms
+INFO: [2025-03-26 12:03:39 CET] Percentiles - P90: 366.039083ms, P75: 358.853235ms, P50: 229.631897ms, P25: 221.840585ms
+INFO: [2025-03-26 12:03:39 CET] httping completed
 ```
 
 #### Example 2:
 
 ```
-PS C:\temp> .\httping.exe -url https://wormhole.network -count 5 -json
-{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":1,"httpStatus":200,"bytes":10991,"rtt":415.5466}
-{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":2,"httpStatus":200,"bytes":10991,"rtt":120.0931}
-{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":3,"httpStatus":200,"bytes":10991,"rtt":75.6925}
-{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":4,"httpStatus":200,"bytes":10991,"rtt":121.3327}
-{"host":"wormhole.network","httpVerb":"GET","hostHeader":"wormhole.network","seq":5,"httpStatus":200,"bytes":10991,"rtt":71.4523}
+$ ./httping -url example.com -count 5 -json
+{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":1,"httpStatus":200,"bytes":1256,"rtt":362.5289}
+{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":2,"httpStatus":200,"bytes":1256,"rtt":215.49931}
+{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":3,"httpStatus":200,"bytes":1256,"rtt":389.4083}
+{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":4,"httpStatus":200,"bytes":1256,"rtt":361.3451}
+{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":5,"httpStatus":200,"bytes":1256,"rtt":217.03917}
 ```
 
-#### Example 3
+#### Example 3:
 
-Continuous monitoring of the connection quality,  
+Bad SSL:
 ```
-$ httping.exe -url http://detectportal.firefox.com/success.txt -count 0 -timeout 1000
+$ ./httping -url https://self-signed.badssl.com -count 1
+INFO: [2025-03-26 12:06:21 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:06:21 CET] HTTP GET to https://self-signed.badssl.com
+INFO: [2025-03-26 12:06:21 CET] Use -h for help
+INFO: [2025-03-26 12:06:21 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
+WARN: [2025-03-26 12:06:22 CET] Request failed to https://self-signed.badssl.com | proxy=None | Error: Get "https://self-signed.badssl.com": tls: failed to verify certificate: x509: certificate signed by unknown authority
+ERROR: [2025-03-26 12:06:22 CET] All probes failed
+```
 
-httping 0.10.0 - A tool to measure RTT on HTTP/S requests
-Help: httping -h
-HTTP GET to detectportal.firefox.com (http://detectportal.firefox.com/success.txt):
-Timeout when connecting to http://detectportal.firefox.com/success.txt
-Timeout when connecting to http://detectportal.firefox.com/success.txt
-connected to http://detectportal.firefox.com/success.txt, seq=3, httpVerb=GET, httpStatus=200, bytes=8, RTT=882.24 ms
-Timeout when connecting to http://detectportal.firefox.com/success.txt
-Timeout when connecting to http://detectportal.firefox.com/success.txt
-Timeout when connecting to http://detectportal.firefox.com/success.txt
-connected to http://detectportal.firefox.com/success.txt, seq=7, httpVerb=GET, httpStatus=200, bytes=8, RTT=928.17 ms
+Bypass Bad SSL:
+```
+$ ./httping -url https://self-signed.badssl.com -count 1 -insecure
+INFO: [2025-03-26 12:06:25 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:06:25 CET] HTTP GET to https://self-signed.badssl.com
+INFO: [2025-03-26 12:06:25 CET] Use -h for help
+INFO: [2025-03-26 12:06:25 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
+INFO: [2025-03-26 12:06:25 CET] Connected to https://self-signed.badssl.com, proxy=None, seq=1, status=200, bytes=502, rtt=559.65ms
+INFO: [2025-03-26 12:06:25 CET] Results - Probes: 1, Success: 1, Failed: 0.0%
+INFO: [2025-03-26 12:06:25 CET] Timing - Min: 559.64504ms, Avg: 0s, Med: 559.64504ms, Max: 559.64504ms
+INFO: [2025-03-26 12:06:25 CET] Percentiles - P90: 559.64504ms, P75: 559.64504ms, P50: 559.64504ms, P25: 559.64504ms
+INFO: [2025-03-26 12:06:25 CET] httping completed
 ```
 
 ### Help
