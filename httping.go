@@ -1,4 +1,4 @@
-// httping 0.10.0 - A tool to measure RTT on HTTP/S requests
+// httping 0.11.0 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	httpingVersion = "0.10.0"
+	httpingVersion = "0.11.0"
 	timeFormat     = "2006-01-02 15:04:05 MST"
 )
 
