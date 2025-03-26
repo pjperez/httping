@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+httping
 
 # Test binary, built with `go test -c`
 *.test
@@ -23,3 +24,4 @@ go.work.sum
 
 # Custom
 vendor/
+test_httping.log
