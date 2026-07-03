@@ -64,37 +64,36 @@ httping -url requested_url [OPTIONS]
 #### Example
 
 ```
-$ ./httping -url example.com -count 10
-INFO: [2025-03-26 12:03:28 CET] httping 0.2.0 starting
-INFO: [2025-03-26 12:03:28 CET] HTTP GET to example.com
-INFO: [2025-03-26 12:03:28 CET] Use -h for help
-WARN: [2025-03-26 12:03:28 CET] No protocol specified, defaulting to HTTP
-INFO: [2025-03-26 12:03:28 CET] Starting HTTP GET to example.com (http://example.com)
-INFO: [2025-03-26 12:03:28 CET] Connected to http://example.com, proxy=None, seq=1, status=200, bytes=1256, rtt=229.63ms
-INFO: [2025-03-26 12:03:30 CET] Connected to http://example.com, proxy=None, seq=2, status=200, bytes=1256, rtt=366.04ms
-INFO: [2025-03-26 12:03:31 CET] Connected to http://example.com, proxy=None, seq=3, status=200, bytes=1256, rtt=221.98ms
-INFO: [2025-03-26 12:03:32 CET] Connected to http://example.com, proxy=None, seq=4, status=200, bytes=1256, rtt=360.16ms
-INFO: [2025-03-26 12:03:34 CET] Connected to http://example.com, proxy=None, seq=5, status=200, bytes=1256, rtt=357.55ms
-INFO: [2025-03-26 12:03:35 CET] Connected to http://example.com, proxy=None, seq=6, status=200, bytes=1256, rtt=227.71ms
-INFO: [2025-03-26 12:03:36 CET] Connected to http://example.com, proxy=None, seq=7, status=200, bytes=1256, rtt=216.90ms
-INFO: [2025-03-26 12:03:38 CET] Connected to http://example.com, proxy=None, seq=8, status=200, bytes=1256, rtt=349.76ms
-INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=9, status=200, bytes=1256, rtt=368.16ms
-INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=10, status=200, bytes=1256, rtt=221.70ms
-INFO: [2025-03-26 12:03:39 CET] Results - Probes: 10, Success: 10, Failed: 0.0%
-INFO: [2025-03-26 12:03:39 CET] Timing - Min: 216.897026ms, Avg: 291.959ms, Med: 289.693866ms, Max: 368.162583ms
-INFO: [2025-03-26 12:03:39 CET] Percentiles - P90: 366.039083ms, P75: 358.853235ms, P50: 229.631897ms, P25: 221.840585ms
-INFO: [2025-03-26 12:03:39 CET] httping completed
+$ ./httping -url https://www.bing.com -count 10
+INFO: [2026-07-03 12:11:13 CEST] httping 0.2.0 starting
+INFO: [2026-07-03 12:11:13 CEST] HTTP GET to https://www.bing.com
+INFO: [2026-07-03 12:11:13 CEST] Use -h for help
+INFO: [2026-07-03 12:11:13 CEST] Starting HTTP GET to www.bing.com (https://www.bing.com)
+INFO: [2026-07-03 12:11:13 CEST] Connected to https://www.bing.com, proxy=None, seq=1, status=200, bytes=64275, rtt=133.11ms
+INFO: [2026-07-03 12:11:14 CEST] Connected to https://www.bing.com, proxy=None, seq=2, status=200, bytes=63476, rtt=56.63ms
+INFO: [2026-07-03 12:11:15 CEST] Connected to https://www.bing.com, proxy=None, seq=3, status=200, bytes=63599, rtt=58.43ms
+INFO: [2026-07-03 12:11:16 CEST] Connected to https://www.bing.com, proxy=None, seq=4, status=200, bytes=63478, rtt=56.08ms
+INFO: [2026-07-03 12:11:17 CEST] Connected to https://www.bing.com, proxy=None, seq=5, status=200, bytes=63457, rtt=49.36ms
+INFO: [2026-07-03 12:11:18 CEST] Connected to https://www.bing.com, proxy=None, seq=6, status=200, bytes=63472, rtt=46.21ms
+INFO: [2026-07-03 12:11:20 CEST] Connected to https://www.bing.com, proxy=None, seq=7, status=200, bytes=64379, rtt=48.43ms
+INFO: [2026-07-03 12:11:21 CEST] Connected to https://www.bing.com, proxy=None, seq=8, status=200, bytes=63176, rtt=51.43ms
+INFO: [2026-07-03 12:11:22 CEST] Connected to https://www.bing.com, proxy=None, seq=9, status=200, bytes=63560, rtt=51.42ms
+INFO: [2026-07-03 12:11:23 CEST] Connected to https://www.bing.com, proxy=None, seq=10, status=200, bytes=64295, rtt=44.43ms
+INFO: [2026-07-03 12:11:23 CEST] Results - Probes: 10, Success: 10, Failed: 0.0%
+INFO: [2026-07-03 12:11:23 CEST] Timing - Min: 44.4264ms, Avg: 59.55321ms, Med: 51.42815ms, Max: 133.1134ms
+INFO: [2026-07-03 12:11:23 CEST] Percentiles - P90: 58.4312ms, P75: 56.35255ms, P50: 51.42815ms, P25: 47.31795ms
+INFO: [2026-07-03 12:11:23 CEST] httping completed
 ```
 
 #### Example 2:
 
 ```
-$ ./httping -url example.com -count 5 -json
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":1,"httpStatus":200,"bytes":1256,"rtt":362.5289}
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":2,"httpStatus":200,"bytes":1256,"rtt":215.49931}
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":3,"httpStatus":200,"bytes":1256,"rtt":389.4083}
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":4,"httpStatus":200,"bytes":1256,"rtt":361.3451}
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":5,"httpStatus":200,"bytes":1256,"rtt":217.03917}
+$ ./httping -url https://www.bing.com -count 5 -json
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":1,"httpStatus":200,"bytes":63201,"rtt":132.3643}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":2,"httpStatus":200,"bytes":62969,"rtt":57.5249}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":3,"httpStatus":200,"bytes":63574,"rtt":49.6071}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":4,"httpStatus":200,"bytes":63349,"rtt":48.6354}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":5,"httpStatus":200,"bytes":63517,"rtt":52.891}
 ```
 
 #### Example 3:

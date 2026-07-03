@@ -1,8 +1,5 @@
-// Example of the newline-delimited JSON (NDJSON) produced by:
-//   ./httping -url https://example.com -json -count 2
-//
-// Each probe is emitted on its own line as a self-contained JSON object;
-// there is no enclosing array or metadata envelope. Field types are
-// numeric where applicable (see schema.json).
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":1,"httpStatus":200,"bytes":1256,"rtt":135.49}
-{"host":"example.com","httpVerb":"GET","hostHeader":"example.com","seq":2,"httpStatus":200,"bytes":1256,"rtt":132.18}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":1,"httpStatus":200,"bytes":63201,"rtt":132.3643}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":2,"httpStatus":200,"bytes":62969,"rtt":57.5249}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":3,"httpStatus":200,"bytes":63574,"rtt":49.6071}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":4,"httpStatus":200,"bytes":63349,"rtt":48.6354}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":5,"httpStatus":200,"bytes":63517,"rtt":52.891}
