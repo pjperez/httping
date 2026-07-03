@@ -111,10 +111,25 @@ func main() {
 	defer infoLogger.Info("httping completed")
 
 	urlStr := *urlPtr
-	httpVerb := *httpverbPtr
+	httpVerb := strings.ToUpper(*httpverbPtr)
 	jsonResults := *jsonResultsPtr
 	noProxy := *noProxyPtr
 	followRedirects := *followRedirectsPtr
+
+	// Validate HTTP verb. README documents GET/HEAD only; reject anything
+	// else early so we don't emit nonsensical requests like "FOO".
+	if httpVerb != "GET" && httpVerb != "HEAD" {
+		errorLogger.Error("Unsupported HTTP verb %q (only GET and HEAD are supported)", httpVerb)
+		os.Exit(1)
+	}
+
+	// Treat any negative count as infinite for consistency with the loop
+	// condition (count < 1 => infinite); the help text only mentions 0.
+	count := *countPtr
+	if count < 0 {
+		warnLogger.Warn("Negative count %d interpreted as infinite", count)
+		count = 0
+	}
 
 	if !jsonResults {
 		infoLogger.Info("HTTP %s to %s", httpVerb, urlStr)
@@ -177,7 +192,7 @@ func main() {
 	}
 
 	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
+	ping(httpVerb, url, count, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
 }
 
 func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
@@ -241,25 +256,25 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		result, errRequest := client.Do(request)
 		responseTime := time.Since(timeStart)
 
-		if err != nil || errRequest != nil {
+		if errRequest != nil {
 			if tlsErr, ok := errRequest.(*tls.CertificateVerificationError); ok {
-				errorLogger.Error("TLS verification failed: %v", tlsErr)
-				for i, cert := range tlsErr.UnverifiedCertificates {
-					errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
-						i+1,
-						cert.Subject.CommonName,
-						cert.Issuer.CommonName,
-						cert.NotAfter.Format("2006-01-02"))
-				}
-				if !insecureTLS {
-					errorLogger.Error("Use -insecure to bypass certificate validation")
-					return
-				}
-				warnLogger.Warn("Proceeding with insecure connection")
-			} else {
-				warnLogger.Warn("Request failed to %s | %s | Error: %v", url, proxyInformation, errRequest)
+			errorLogger.Error("TLS verification failed: %v", tlsErr)
+			for j, cert := range tlsErr.UnverifiedCertificates {
+				errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
+					j+1,
+					cert.Subject.CommonName,
+					cert.Issuer.CommonName,
+					cert.NotAfter.Format("2006-01-02"))
 			}
-			continue
+			if !insecureTLS {
+				errorLogger.Error("Use -insecure to bypass certificate validation")
+				return
+			}
+			warnLogger.Warn("Proceeding with insecure connection")
+		} else {
+			warnLogger.Warn("Request failed to %s | %s | Error: %v", url, proxyInformation, errRequest)
+		}
+		continue
 		}
 
 		body, err := ioutil.ReadAll(result.Body)
@@ -296,7 +311,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			responseTimes = append(responseTimes, float64(responseTime))
 		}
 
-		if ((count - i) > 1) || (count <= 0) {
+		// Sleep one second between probes, but skip the pause after the final
+		// probe of a bounded run. The previous condition '(count - i) > 1'
+		// also skipped the second-to-last interval by mistake.
+		if count == 0 || i < count {
 			time.Sleep(1 * time.Second)
 		}
 	}
