@@ -65,35 +65,35 @@ httping -url requested_url [OPTIONS]
 
 ```
 $ ./httping -url https://www.bing.com -count 10
-INFO: [2026-07-03 12:11:13 CEST] httping 0.2.0 starting
-INFO: [2026-07-03 12:11:13 CEST] HTTP GET to https://www.bing.com
-INFO: [2026-07-03 12:11:13 CEST] Use -h for help
-INFO: [2026-07-03 12:11:13 CEST] Starting HTTP GET to www.bing.com (https://www.bing.com)
-INFO: [2026-07-03 12:11:13 CEST] Connected to https://www.bing.com, proxy=None, seq=1, status=200, bytes=64275, rtt=133.11ms
-INFO: [2026-07-03 12:11:14 CEST] Connected to https://www.bing.com, proxy=None, seq=2, status=200, bytes=63476, rtt=56.63ms
-INFO: [2026-07-03 12:11:15 CEST] Connected to https://www.bing.com, proxy=None, seq=3, status=200, bytes=63599, rtt=58.43ms
-INFO: [2026-07-03 12:11:16 CEST] Connected to https://www.bing.com, proxy=None, seq=4, status=200, bytes=63478, rtt=56.08ms
-INFO: [2026-07-03 12:11:17 CEST] Connected to https://www.bing.com, proxy=None, seq=5, status=200, bytes=63457, rtt=49.36ms
-INFO: [2026-07-03 12:11:18 CEST] Connected to https://www.bing.com, proxy=None, seq=6, status=200, bytes=63472, rtt=46.21ms
-INFO: [2026-07-03 12:11:20 CEST] Connected to https://www.bing.com, proxy=None, seq=7, status=200, bytes=64379, rtt=48.43ms
-INFO: [2026-07-03 12:11:21 CEST] Connected to https://www.bing.com, proxy=None, seq=8, status=200, bytes=63176, rtt=51.43ms
-INFO: [2026-07-03 12:11:22 CEST] Connected to https://www.bing.com, proxy=None, seq=9, status=200, bytes=63560, rtt=51.42ms
-INFO: [2026-07-03 12:11:23 CEST] Connected to https://www.bing.com, proxy=None, seq=10, status=200, bytes=64295, rtt=44.43ms
-INFO: [2026-07-03 12:11:23 CEST] Results - Probes: 10, Success: 10, Failed: 0.0%
-INFO: [2026-07-03 12:11:23 CEST] Timing - Min: 44.4264ms, Avg: 59.55321ms, Med: 51.42815ms, Max: 133.1134ms
-INFO: [2026-07-03 12:11:23 CEST] Percentiles - P90: 58.4312ms, P75: 56.35255ms, P50: 51.42815ms, P25: 47.31795ms
-INFO: [2026-07-03 12:11:23 CEST] httping completed
+INFO: [2026-07-03 12:33:23 CEST] httping 0.2.0 starting
+INFO: [2026-07-03 12:33:23 CEST] HTTP GET to https://www.bing.com
+INFO: [2026-07-03 12:33:23 CEST] Use -h for help
+INFO: [2026-07-03 12:33:23 CEST] Starting HTTP GET to www.bing.com (https://www.bing.com)
+INFO: [2026-07-03 12:33:23 CEST] Connected to https://www.bing.com, proxy=None, seq=1, status=200, bytes=63478, rtt=128.73ms
+INFO: [2026-07-03 12:33:24 CEST] Connected to https://www.bing.com, proxy=None, seq=2, status=200, bytes=63517, rtt=54.77ms
+INFO: [2026-07-03 12:33:26 CEST] Connected to https://www.bing.com, proxy=None, seq=3, status=200, bytes=63988, rtt=58.94ms
+INFO: [2026-07-03 12:33:27 CEST] Connected to https://www.bing.com, proxy=None, seq=4, status=200, bytes=63472, rtt=76.83ms
+INFO: [2026-07-03 12:33:28 CEST] Connected to https://www.bing.com, proxy=None, seq=5, status=200, bytes=64430, rtt=51.98ms
+INFO: [2026-07-03 12:33:29 CEST] Connected to https://www.bing.com, proxy=None, seq=6, status=200, bytes=63148, rtt=47.09ms
+INFO: [2026-07-03 12:33:30 CEST] Connected to https://www.bing.com, proxy=None, seq=7, status=200, bytes=64280, rtt=53.34ms
+INFO: [2026-07-03 12:33:31 CEST] Connected to https://www.bing.com, proxy=None, seq=8, status=200, bytes=63563, rtt=48.30ms
+INFO: [2026-07-03 12:33:32 CEST] Connected to https://www.bing.com, proxy=None, seq=9, status=200, bytes=64304, rtt=55.96ms
+INFO: [2026-07-03 12:33:33 CEST] Connected to https://www.bing.com, proxy=None, seq=10, status=200, bytes=63124, rtt=60.93ms
+INFO: [2026-07-03 12:33:33 CEST] Results - Probes: 10, Success: 10, Failed: 0.0%
+INFO: [2026-07-03 12:33:33 CEST] Timing - Min: 47.0925ms, Avg: 63.68689ms, Med: 55.3653ms, Max: 128.7281ms
+INFO: [2026-07-03 12:33:33 CEST] Percentiles - P90: 76.8331ms, P75: 59.9334ms, P50: 55.3653ms, P25: 50.14035ms
+INFO: [2026-07-03 12:33:33 CEST] httping completed
 ```
 
 #### Example 2:
 
 ```
 $ ./httping -url https://www.bing.com -count 5 -json
-{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":1,"httpStatus":200,"bytes":63201,"rtt":132.3643}
-{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":2,"httpStatus":200,"bytes":62969,"rtt":57.5249}
-{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":3,"httpStatus":200,"bytes":63574,"rtt":49.6071}
-{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":4,"httpStatus":200,"bytes":63349,"rtt":48.6354}
-{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":5,"httpStatus":200,"bytes":63517,"rtt":52.891}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":1,"httpStatus":200,"bytes":64375,"rtt":112.3862}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":2,"httpStatus":200,"bytes":63565,"rtt":49.0889}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":3,"httpStatus":200,"bytes":63350,"rtt":48.025}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":4,"httpStatus":200,"bytes":63350,"rtt":48.778}
+{"host":"www.bing.com","httpVerb":"GET","hostHeader":"www.bing.com","seq":5,"httpStatus":200,"bytes":63597,"rtt":43.863}
 ```
 
 #### Example 3:
@@ -101,26 +101,26 @@ $ ./httping -url https://www.bing.com -count 5 -json
 Bad SSL:
 ```
 $ ./httping -url https://self-signed.badssl.com -count 1
-INFO: [2025-03-26 12:06:21 CET] httping 0.2.0 starting
-INFO: [2025-03-26 12:06:21 CET] HTTP GET to https://self-signed.badssl.com
-INFO: [2025-03-26 12:06:21 CET] Use -h for help
-INFO: [2025-03-26 12:06:21 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
-WARN: [2025-03-26 12:06:22 CET] Request failed to https://self-signed.badssl.com | proxy=None | Error: Get "https://self-signed.badssl.com": tls: failed to verify certificate: x509: certificate signed by unknown authority
-ERROR: [2025-03-26 12:06:22 CET] All probes failed
+INFO: [2026-07-03 12:33:38 CEST] httping 0.2.0 starting
+INFO: [2026-07-03 12:33:38 CEST] HTTP GET to https://self-signed.badssl.com
+INFO: [2026-07-03 12:33:38 CEST] Use -h for help
+INFO: [2026-07-03 12:33:38 CEST] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
+WARN: [2026-07-03 12:33:38 CEST] Request failed to https://self-signed.badssl.com | proxy=None | Error: Get "https://self-signed.badssl.com": tls: failed to verify certificate: x509: certificate signed by unknown authority
+ERROR: [2026-07-03 12:33:38 CEST] All probes failed
 ```
 
 Bypass Bad SSL:
 ```
 $ ./httping -url https://self-signed.badssl.com -count 1 -insecure
-INFO: [2025-03-26 12:06:25 CET] httping 0.2.0 starting
-INFO: [2025-03-26 12:06:25 CET] HTTP GET to https://self-signed.badssl.com
-INFO: [2025-03-26 12:06:25 CET] Use -h for help
-INFO: [2025-03-26 12:06:25 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
-INFO: [2025-03-26 12:06:25 CET] Connected to https://self-signed.badssl.com, proxy=None, seq=1, status=200, bytes=502, rtt=559.65ms
-INFO: [2025-03-26 12:06:25 CET] Results - Probes: 1, Success: 1, Failed: 0.0%
-INFO: [2025-03-26 12:06:25 CET] Timing - Min: 559.64504ms, Avg: 559.64504ms, Med: 559.64504ms, Max: 559.64504ms
-INFO: [2025-03-26 12:06:25 CET] Percentiles - P90: 559.64504ms, P75: 559.64504ms, P50: 559.64504ms, P25: 559.64504ms
-INFO: [2025-03-26 12:06:25 CET] httping completed
+INFO: [2026-07-03 12:34:00 CEST] httping 0.2.0 starting
+INFO: [2026-07-03 12:34:00 CEST] HTTP GET to https://self-signed.badssl.com
+INFO: [2026-07-03 12:34:00 CEST] Use -h for help
+INFO: [2026-07-03 12:34:00 CEST] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
+INFO: [2026-07-03 12:34:01 CEST] Connected to https://self-signed.badssl.com, proxy=None, seq=1, status=200, bytes=502, rtt=637.19ms
+INFO: [2026-07-03 12:34:01 CEST] Results - Probes: 1, Success: 1, Failed: 0.0%
+INFO: [2026-07-03 12:34:01 CEST] Timing - Min: 637.1897ms, Avg: 637.1897ms, Med: 637.1897ms, Max: 637.1897ms
+INFO: [2026-07-03 12:34:01 CEST] Percentiles - P90: 637.1897ms, P75: 637.1897ms, P50: 637.1897ms, P25: 637.1897ms
+INFO: [2026-07-03 12:34:01 CEST] httping completed
 ```
 
 ### Help
