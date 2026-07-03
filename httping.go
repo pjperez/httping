@@ -213,7 +213,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 
 		proxyInformation := "proxy=None"
 		if !noProxy {
-			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
+			// go-get-proxied expects the URL scheme ("http"/"https"), not the
+			// HTTP verb. Passing httpVerb meant proxy auto-detection never
+			// matched.
+			p := proxy.NewProvider("").GetProxy(url.Scheme, url.String())
 			if p != nil {
 				proxyInformation = fmt.Sprintf("proxy=%s", p)
 				transport.Proxy = http.ProxyURL(p.URL())
@@ -265,6 +268,11 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			warnLogger.Warn("Failed to read response body: %v", err)
 		}
 		bytes := len(body)
+
+		// A fresh transport is created each iteration; release its idle
+		// connections so a long-running '-count 0' session does not leak
+		// goroutines and sockets.
+		transport.CloseIdleConnections()
 
 		if jsonResults {
 			results := &Result{
