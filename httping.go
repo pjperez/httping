@@ -93,7 +93,7 @@ func main() {
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
 	countPtr := flag.Int("count", 10, "Number of requests to send [0 means infinite]")
-	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
+	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-listen 80'")
 	timeoutPtr := flag.Int("timeout", 2000, "Timeout in milliseconds")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
@@ -135,13 +135,16 @@ func main() {
 		infoLogger.Info("Use -h for help")
 	}
 
-	// If listener mode is selected, ignore the rest of the args
+	// If listener mode is selected, ignore the rest of the args. Use a
+	// dedicated ServeMux rather than DefaultServeMux to avoid mutating global
+	// state.
 	if *listenPtr > 0 {
 		listenPort := strconv.Itoa(*listenPtr)
 		infoLogger.Info("Starting listener on port %s", listenPort)
 
-		http.HandleFunc("/", serverResponse)
-		if err := http.ListenAndServe(":"+listenPort, nil); err != nil {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", serverResponse)
+		if err := http.ListenAndServe(":"+listenPort, mux); err != nil {
 			errorLogger.Error("Listener failed: %v", err)
 			os.Exit(1)
 		}
