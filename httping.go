@@ -336,11 +336,15 @@ func ping(httpVerb string, target *url.URL, count int, timeout time.Duration, ho
 	mean, _ := stats.Mean(responseTimes)
 	timeAverage := time.Duration(mean)
 	min, max := calculateMinMax(responseTimes)
-	// p50 and the median are identical; compute it once.
+	// p50 and the median are identical; compute it once. Percentile
+	// computations can fail (and return NaN) when there are too few
+	// samples -- guard them so we never print garbage like
+	// '-2562047h47m16.854775808s' that comes from converting NaN to a
+	// time.Duration. percentileDuration returns "N/A" in that case.
 	median, _ := stats.Median(responseTimes)
-	p90, _ := stats.Percentile(responseTimes, 90)
-	p75, _ := stats.Percentile(responseTimes, 75)
-	p25, _ := stats.Percentile(responseTimes, 25)
+	p90, errP90 := stats.Percentile(responseTimes, 90)
+	p75, errP75 := stats.Percentile(responseTimes, 75)
+	p25, errP25 := stats.Percentile(responseTimes, 25)
 
 	if !jsonResults {
 		// Compute failure rate using floating-point division; the previous
@@ -351,9 +355,22 @@ func ping(httpVerb string, target *url.URL, count int, timeout time.Duration, ho
 			i-1, successfulProbes, failureRate)
 		infoLogger.Info("Timing - Min: %v, Avg: %v, Med: %v, Max: %v",
 			time.Duration(min), timeAverage, time.Duration(median), time.Duration(max))
-		infoLogger.Info("Percentiles - P90: %v, P75: %v, P50: %v, P25: %v",
-			time.Duration(p90), time.Duration(p75), time.Duration(median), time.Duration(p25))
+		infoLogger.Info("Percentiles - P90: %s, P75: %s, P50: %v, P25: %s",
+			percentileDuration(p90, errP90),
+			percentileDuration(p75, errP75),
+			time.Duration(median),
+			percentileDuration(p25, errP25))
 	}
+}
+
+// percentileDuration converts a stats.Percentile result into a printable
+// value, returning "N/A" when the underlying computation failed or
+// produced a non-finite value (e.g. too few samples).
+func percentileDuration(value float64, err error) any {
+	if err != nil || value != value || value > 1e18 { // value != value checks for NaN
+		return "N/A"
+	}
+	return time.Duration(value)
 }
 
 func calculateMinMax(times []float64) (min, max float64) {
