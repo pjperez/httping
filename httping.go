@@ -13,7 +13,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -277,7 +276,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		continue
 		}
 
-		body, err := ioutil.ReadAll(result.Body)
+		body, err := io.ReadAll(result.Body)
 		result.Body.Close()
 		if err != nil {
 			warnLogger.Warn("Failed to read response body: %v", err)
@@ -299,7 +298,11 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				Bytes:       bytes,
 				RTT:         float32(responseTime) / 1e6,
 			}
-			jsonData, _ := json.Marshal(results)
+			jsonData, err := json.Marshal(results)
+			if err != nil {
+				errorLogger.Error("Failed to marshal JSON result: %v", err)
+				continue
+			}
 			fmt.Println(string(jsonData))
 		} else {
 			infoLogger.Info("Connected to %s, %s, seq=%d, status=%d, bytes=%d, rtt=%.2fms",
@@ -330,10 +333,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	mean, _ := stats.Mean(responseTimes)
 	timeAverage := time.Duration(mean)
 	min, max := calculateMinMax(responseTimes)
+	// p50 and the median are identical; compute it once.
 	median, _ := stats.Median(responseTimes)
 	p90, _ := stats.Percentile(responseTimes, 90)
 	p75, _ := stats.Percentile(responseTimes, 75)
-	p50, _ := stats.Percentile(responseTimes, 50)
 	p25, _ := stats.Percentile(responseTimes, 25)
 
 	if !jsonResults {
@@ -346,11 +349,14 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		infoLogger.Info("Timing - Min: %v, Avg: %v, Med: %v, Max: %v",
 			time.Duration(min), timeAverage, time.Duration(median), time.Duration(max))
 		infoLogger.Info("Percentiles - P90: %v, P75: %v, P50: %v, P25: %v",
-			time.Duration(p90), time.Duration(p75), time.Duration(p50), time.Duration(p25))
+			time.Duration(p90), time.Duration(p75), time.Duration(median), time.Duration(p25))
 	}
 }
 
 func calculateMinMax(times []float64) (min, max float64) {
+	if len(times) == 0 {
+		return 0, 0
+	}
 	min = times[0]
 	max = times[0]
 	for _, t := range times {
