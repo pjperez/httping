@@ -180,7 +180,6 @@ func main() {
 }
 
 func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
-	timeTotal := time.Duration(0)
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
@@ -299,8 +298,11 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		os.Exit(1)
 	}
 
-	// Calculate statistics
-	timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
+	// Calculate statistics. The mean is derived from the recorded response
+	// times rather than an accumulator, which previously was never updated
+	// and so always produced an average of 0s.
+	mean, _ := stats.Mean(responseTimes)
+	timeAverage := time.Duration(mean)
 	min, max := calculateMinMax(responseTimes)
 	median, _ := stats.Median(responseTimes)
 	p90, _ := stats.Percentile(responseTimes, 90)
@@ -309,7 +311,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	p25, _ := stats.Percentile(responseTimes, 25)
 
 	if !jsonResults {
-		failureRate := float64(100 - (successfulProbes*100)/(i-1))
+		// Compute failure rate using floating-point division; the previous
+		// expression performed integer division before the float64 cast,
+		// which dropped any sub-percent precision.
+		failureRate := 100.0 * (1.0 - float64(successfulProbes)/float64(i-1))
 		infoLogger.Info("Results - Probes: %d, Success: %d, Failed: %.1f%%",
 			i-1, successfulProbes, failureRate)
 		infoLogger.Info("Timing - Min: %v, Avg: %v, Med: %v, Max: %v",
