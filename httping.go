@@ -147,19 +147,18 @@ func main() {
 	}
 	timeout := time.Duration(*timeoutPtr) * time.Millisecond
 
-	// Handle protocol
-	if len(urlStr) > 6 {
-		if urlStr[:7] != "http://" && urlStr[:8] != "https://" {
-			if strings.Contains(urlStr, "://") {
-				errorLogger.Error("Unsupported protocol (only HTTP/HTTPS allowed)")
-				os.Exit(1)
-			}
-			warnLogger.Warn("No protocol specified, defaulting to HTTP")
-			urlStr = "http://" + urlStr
-		}
-	} else {
-		errorLogger.Error("Invalid URL format")
+	// Handle protocol. Use HasPrefix rather than slicing so that short
+	// inputs (e.g. exactly "http://") cannot trigger a slice-bounds panic
+	// when checking for the "https://" prefix.
+	switch {
+	case strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://"):
+		// scheme already present
+	case strings.Contains(urlStr, "://"):
+		errorLogger.Error("Unsupported protocol (only HTTP/HTTPS allowed)")
 		os.Exit(1)
+	default:
+		warnLogger.Warn("No protocol specified, defaulting to HTTP")
+		urlStr = "http://" + urlStr
 	}
 
 	// Parse URL
