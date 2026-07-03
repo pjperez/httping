@@ -8,7 +8,7 @@ This tool should be able to run on Windows, Linux and Mac OS/X, but it has only 
 - [Download from Github](https://github.com/pjperez/httping/releases)
 
 ### Requirements
-Golang >1.3 ::  http.Client Timeout wasn't available in previous versions    
+Golang >=1.21 ::  needed for signal.NotifyContext and io.ReadAll (the previous '>1.3' note was stale)
 External library requirement: [github.com/montanaflynn/stats](https://github.com/montanaflynn/stats)
 
 ### Installing
