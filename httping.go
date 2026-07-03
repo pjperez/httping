@@ -8,6 +8,7 @@ package main
 
 import (
 	"crypto/tls"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"strconv"
@@ -182,7 +184,6 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
-	fBreak := 0
 
 	// Setup redirect policy
 	var checkRedirectFunc func(req *http.Request, via []*http.Request) error
@@ -192,16 +193,16 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		}
 	}
 
-	// Setup signal handling
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		warnLogger.Warn("Interrupt signal received, stopping...")
-		fBreak = 1
-	}()
+	// Setup signal handling. signal.NotifyContext returns a context that is
+	// cancelled on the first interrupt/SIGTERM; it also restores default
+	// behavior afterwards, so a second signal terminates the process. This
+	// replaces the previous fBreak flag, which was written from a goroutine
+	// and read from the loop without synchronisation (a data race under
+	// -race) and only handled os.Interrupt.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
+	for i = 1; (count >= i || count < 1) && ctx.Err() == nil; i++ {
 		transport := &http.Transport{
 			ForceAttemptHTTP2: true,
 			TLSClientConfig: &tls.Config{
