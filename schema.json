@@ -1,60 +1,37 @@
-
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Describes a single line of the NDJSON stream emitted with -json. Each probe is a self-contained object printed on its own line; there is no top-level envelope.",
   "type": "object",
   "properties": {
-    "metadata": {
-      "type": "object",
-      "properties": {
-        "host": {
-          "type": "string"
-        },
-        "protocol": {
-          "type": "string"
-        },
-        "httpVerb": {
-          "type": "string"
-        },
-        "host header": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "host",
-        "protocol",
-        "httpVerb",
-        "host header"
-      ]
+    "host": {
+      "type": "string",
+      "description": "Target hostname (URL.Host), e.g. example.com"
     },
-    "probes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "seq": {
-            "type": "string"
-          },
-          "httpStatus": {
-            "type": "string"
-          },
-          "bytes": {
-            "type": "string"
-          },
-          "rtt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "seq",
-          "httpStatus",
-          "bytes",
-          "rtt"
-        ]
-      }
+    "httpVerb": {
+      "type": "string",
+      "enum": ["GET", "HEAD"]
+    },
+    "hostHeader": {
+      "type": "string",
+      "description": "Host header sent with the request"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "httpStatus": {
+      "type": "integer",
+      "description": "HTTP response status code"
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of bytes read from the response body"
+    },
+    "rtt": {
+      "type": "number",
+      "description": "Round-trip time in milliseconds"
     }
   },
-  "required": [
-    "metadata",
-    "probes"
-  ]
+  "required": ["host", "httpVerb", "hostHeader", "seq", "httpStatus", "bytes", "rtt"]
 }

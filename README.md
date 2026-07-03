@@ -8,7 +8,7 @@ This tool should be able to run on Windows, Linux and Mac OS/X, but it has only 
 - [Download from Github](https://github.com/pjperez/httping/releases)
 
 ### Requirements
-Golang >1.3 ::  http.Client Timeout wasn't available in previous versions    
+Golang >=1.21 ::  needed for signal.NotifyContext and io.ReadAll (the previous '>1.3' note was stale)
 External library requirement: [github.com/montanaflynn/stats](https://github.com/montanaflynn/stats)
 
 ### Installing
@@ -65,7 +65,7 @@ httping -url requested_url [OPTIONS]
 
 ```
 $ ./httping -url example.com -count 10
-INFO: [2025-03-26 12:03:28 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:03:28 CET] httping 0.2.0 starting
 INFO: [2025-03-26 12:03:28 CET] HTTP GET to example.com
 INFO: [2025-03-26 12:03:28 CET] Use -h for help
 WARN: [2025-03-26 12:03:28 CET] No protocol specified, defaulting to HTTP
@@ -81,7 +81,7 @@ INFO: [2025-03-26 12:03:38 CET] Connected to http://example.com, proxy=None, seq
 INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=9, status=200, bytes=1256, rtt=368.16ms
 INFO: [2025-03-26 12:03:39 CET] Connected to http://example.com, proxy=None, seq=10, status=200, bytes=1256, rtt=221.70ms
 INFO: [2025-03-26 12:03:39 CET] Results - Probes: 10, Success: 10, Failed: 0.0%
-INFO: [2025-03-26 12:03:39 CET] Timing - Min: 216.897026ms, Avg: 0s, Med: 289.693866ms, Max: 368.162583ms
+INFO: [2025-03-26 12:03:39 CET] Timing - Min: 216.897026ms, Avg: 291.959ms, Med: 289.693866ms, Max: 368.162583ms
 INFO: [2025-03-26 12:03:39 CET] Percentiles - P90: 366.039083ms, P75: 358.853235ms, P50: 229.631897ms, P25: 221.840585ms
 INFO: [2025-03-26 12:03:39 CET] httping completed
 ```
@@ -102,7 +102,7 @@ $ ./httping -url example.com -count 5 -json
 Bad SSL:
 ```
 $ ./httping -url https://self-signed.badssl.com -count 1
-INFO: [2025-03-26 12:06:21 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:06:21 CET] httping 0.2.0 starting
 INFO: [2025-03-26 12:06:21 CET] HTTP GET to https://self-signed.badssl.com
 INFO: [2025-03-26 12:06:21 CET] Use -h for help
 INFO: [2025-03-26 12:06:21 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
@@ -113,13 +113,13 @@ ERROR: [2025-03-26 12:06:22 CET] All probes failed
 Bypass Bad SSL:
 ```
 $ ./httping -url https://self-signed.badssl.com -count 1 -insecure
-INFO: [2025-03-26 12:06:25 CET] httping 0.10.0 starting
+INFO: [2025-03-26 12:06:25 CET] httping 0.2.0 starting
 INFO: [2025-03-26 12:06:25 CET] HTTP GET to https://self-signed.badssl.com
 INFO: [2025-03-26 12:06:25 CET] Use -h for help
 INFO: [2025-03-26 12:06:25 CET] Starting HTTP GET to self-signed.badssl.com (https://self-signed.badssl.com)
 INFO: [2025-03-26 12:06:25 CET] Connected to https://self-signed.badssl.com, proxy=None, seq=1, status=200, bytes=502, rtt=559.65ms
 INFO: [2025-03-26 12:06:25 CET] Results - Probes: 1, Success: 1, Failed: 0.0%
-INFO: [2025-03-26 12:06:25 CET] Timing - Min: 559.64504ms, Avg: 0s, Med: 559.64504ms, Max: 559.64504ms
+INFO: [2025-03-26 12:06:25 CET] Timing - Min: 559.64504ms, Avg: 559.64504ms, Med: 559.64504ms, Max: 559.64504ms
 INFO: [2025-03-26 12:06:25 CET] Percentiles - P90: 559.64504ms, P75: 559.64504ms, P50: 559.64504ms, P25: 559.64504ms
 INFO: [2025-03-26 12:06:25 CET] httping completed
 ```

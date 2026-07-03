@@ -1,4 +1,4 @@
-// httping 0.11.0 - A tool to measure RTT on HTTP/S requests
+// httping 0.2.0 - A tool to measure RTT on HTTP/S requests
 // This software is distributed AS IS and has no warranty. This is merely a learning exercise and should not be used in production under any circumstances.
 // This is my own work and not that of my employer, not is endorsed or supported by them in any conceivable way.
 // Pedro Perez - pjperez@outlook.com
@@ -7,18 +7,19 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"strconv"
@@ -28,7 +29,7 @@ import (
 )
 
 const (
-	httpingVersion = "0.11.0"
+	httpingVersion = "0.2.0"
 	timeFormat     = "2006-01-02 15:04:05 MST"
 )
 
@@ -92,7 +93,7 @@ func main() {
 	urlPtr := flag.String("url", "", "Requested URL")
 	httpverbPtr := flag.String("httpverb", "GET", "HTTP Verb: Only GET or HEAD supported at the moment")
 	countPtr := flag.Int("count", 10, "Number of requests to send [0 means infinite]")
-	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-r 80'")
+	listenPtr := flag.Int("listen", 0, "Enable listener mode on specified port, e.g. '-listen 80'")
 	timeoutPtr := flag.Int("timeout", 2000, "Timeout in milliseconds")
 	hostHeaderPtr := flag.String("hostheader", "", "Optional: Host header")
 	jsonResultsPtr := flag.Bool("json", false, "If true, produces output in json format")
@@ -109,23 +110,41 @@ func main() {
 	defer infoLogger.Info("httping completed")
 
 	urlStr := *urlPtr
-	httpVerb := *httpverbPtr
+	httpVerb := strings.ToUpper(*httpverbPtr)
 	jsonResults := *jsonResultsPtr
 	noProxy := *noProxyPtr
 	followRedirects := *followRedirectsPtr
+
+	// Validate HTTP verb. README documents GET/HEAD only; reject anything
+	// else early so we don't emit nonsensical requests like "FOO".
+	if httpVerb != "GET" && httpVerb != "HEAD" {
+		errorLogger.Error("Unsupported HTTP verb %q (only GET and HEAD are supported)", httpVerb)
+		os.Exit(1)
+	}
+
+	// Treat any negative count as infinite for consistency with the loop
+	// condition (count < 1 => infinite); the help text only mentions 0.
+	count := *countPtr
+	if count < 0 {
+		warnLogger.Warn("Negative count %d interpreted as infinite", count)
+		count = 0
+	}
 
 	if !jsonResults {
 		infoLogger.Info("HTTP %s to %s", httpVerb, urlStr)
 		infoLogger.Info("Use -h for help")
 	}
 
-	// If listener mode is selected, ignore the rest of the args
+	// If listener mode is selected, ignore the rest of the args. Use a
+	// dedicated ServeMux rather than DefaultServeMux to avoid mutating global
+	// state.
 	if *listenPtr > 0 {
 		listenPort := strconv.Itoa(*listenPtr)
 		infoLogger.Info("Starting listener on port %s", listenPort)
 
-		http.HandleFunc("/", serverRESPONSE)
-		if err := http.ListenAndServe(":"+listenPort, nil); err != nil {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", serverResponse)
+		if err := http.ListenAndServe(":"+listenPort, mux); err != nil {
 			errorLogger.Error("Listener failed: %v", err)
 			os.Exit(1)
 		}
@@ -147,23 +166,22 @@ func main() {
 	}
 	timeout := time.Duration(*timeoutPtr) * time.Millisecond
 
-	// Handle protocol
-	if len(urlStr) > 6 {
-		if urlStr[:7] != "http://" && urlStr[:8] != "https://" {
-			if strings.Contains(urlStr, "://") {
-				errorLogger.Error("Unsupported protocol (only HTTP/HTTPS allowed)")
-				os.Exit(1)
-			}
-			warnLogger.Warn("No protocol specified, defaulting to HTTP")
-			urlStr = "http://" + urlStr
-		}
-	} else {
-		errorLogger.Error("Invalid URL format")
+	// Handle protocol. Use HasPrefix rather than slicing so that short
+	// inputs (e.g. exactly "http://") cannot trigger a slice-bounds panic
+	// when checking for the "https://" prefix.
+	switch {
+	case strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://"):
+		// scheme already present
+	case strings.Contains(urlStr, "://"):
+		errorLogger.Error("Unsupported protocol (only HTTP/HTTPS allowed)")
 		os.Exit(1)
+	default:
+		warnLogger.Warn("No protocol specified, defaulting to HTTP")
+		urlStr = "http://" + urlStr
 	}
 
 	// Parse URL
-	url, err := url.Parse(urlStr)
+	target, err := url.Parse(urlStr)
 	if err != nil {
 		errorLogger.Error("URL parse error: %v", err)
 		os.Exit(1)
@@ -172,19 +190,17 @@ func main() {
 	// Set host header
 	hostHeader := *hostHeaderPtr
 	if hostHeader == "" {
-		hostHeader = url.Host
+		hostHeader = target.Host
 	}
 
-	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url, *countPtr, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
+	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, target.Host, urlStr)
+	ping(httpVerb, target, count, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
 }
 
-func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
-	timeTotal := time.Duration(0)
+func ping(httpVerb string, target *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
-	fBreak := 0
 
 	// Setup redirect policy
 	var checkRedirectFunc func(req *http.Request, via []*http.Request) error
@@ -194,16 +210,16 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		}
 	}
 
-	// Setup signal handling
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		warnLogger.Warn("Interrupt signal received, stopping...")
-		fBreak = 1
-	}()
+	// Setup signal handling. signal.NotifyContext returns a context that is
+	// cancelled on the first interrupt/SIGTERM; it also restores default
+	// behavior afterwards, so a second signal terminates the process. This
+	// replaces the previous fBreak flag, which was written from a goroutine
+	// and read from the loop without synchronisation (a data race under
+	// -race) and only handled os.Interrupt.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	for i = 1; (count >= i || count < 1) && fBreak == 0; i++ {
+	for i = 1; (count >= i || count < 1) && ctx.Err() == nil; i++ {
 		transport := &http.Transport{
 			ForceAttemptHTTP2: true,
 			TLSClientConfig: &tls.Config{
@@ -214,7 +230,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 
 		proxyInformation := "proxy=None"
 		if !noProxy {
-			p := proxy.NewProvider("").GetProxy(httpVerb, url.String())
+			// go-get-proxied expects the URL scheme ("http"/"https"), not the
+			// HTTP verb. Passing httpVerb meant proxy auto-detection never
+			// matched.
+			p := proxy.NewProvider("").GetProxy(target.Scheme, target.String())
 			if p != nil {
 				proxyInformation = fmt.Sprintf("proxy=%s", p)
 				transport.Proxy = http.ProxyURL(p.URL())
@@ -227,7 +246,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			CheckRedirect: checkRedirectFunc,
 		}
 
-		request, err := http.NewRequest(httpVerb, url.String(), nil)
+		request, err := http.NewRequest(httpVerb, target.String(), nil)
 		if err != nil {
 			errorLogger.Error("Request creation failed: %v", err)
 			continue
@@ -239,12 +258,12 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		result, errRequest := client.Do(request)
 		responseTime := time.Since(timeStart)
 
-		if err != nil || errRequest != nil {
+		if errRequest != nil {
 			if tlsErr, ok := errRequest.(*tls.CertificateVerificationError); ok {
 				errorLogger.Error("TLS verification failed: %v", tlsErr)
-				for i, cert := range tlsErr.UnverifiedCertificates {
+				for j, cert := range tlsErr.UnverifiedCertificates {
 					errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
-						i+1,
+						j+1,
 						cert.Subject.CommonName,
 						cert.Issuer.CommonName,
 						cert.NotAfter.Format("2006-01-02"))
@@ -255,21 +274,26 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				}
 				warnLogger.Warn("Proceeding with insecure connection")
 			} else {
-				warnLogger.Warn("Request failed to %s | %s | Error: %v", url, proxyInformation, errRequest)
+				warnLogger.Warn("Request failed to %s | %s | Error: %v", target, proxyInformation, errRequest)
 			}
 			continue
 		}
 
-		body, err := ioutil.ReadAll(result.Body)
+		body, err := io.ReadAll(result.Body)
 		result.Body.Close()
 		if err != nil {
 			warnLogger.Warn("Failed to read response body: %v", err)
 		}
 		bytes := len(body)
 
+		// A fresh transport is created each iteration; release its idle
+		// connections so a long-running '-count 0' session does not leak
+		// goroutines and sockets.
+		transport.CloseIdleConnections()
+
 		if jsonResults {
 			results := &Result{
-				Host:        url.Host,
+				Host:        target.Host,
 				HTTPVerb:    httpVerb,
 				HostHeaders: hostHeader,
 				Seq:         i,
@@ -277,11 +301,15 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 				Bytes:       bytes,
 				RTT:         float32(responseTime) / 1e6,
 			}
-			jsonData, _ := json.Marshal(results)
+			jsonData, err := json.Marshal(results)
+			if err != nil {
+				errorLogger.Error("Failed to marshal JSON result: %v", err)
+				continue
+			}
 			fmt.Println(string(jsonData))
 		} else {
 			infoLogger.Info("Connected to %s, %s, seq=%d, status=%d, bytes=%d, rtt=%.2fms",
-				url, proxyInformation, i, result.StatusCode, bytes, float32(responseTime)/1e6)
+				target, proxyInformation, i, result.StatusCode, bytes, float32(responseTime)/1e6)
 		}
 
 		if result.StatusCode >= 100 && result.StatusCode < 400 {
@@ -289,7 +317,10 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			responseTimes = append(responseTimes, float64(responseTime))
 		}
 
-		if ((count - i) > 1) || (count <= 0) {
+		// Sleep one second between probes, but skip the pause after the final
+		// probe of a bounded run. The previous condition '(count - i) > 1'
+		// also skipped the second-to-last interval by mistake.
+		if count == 0 || i < count {
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -299,27 +330,53 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 		os.Exit(1)
 	}
 
-	// Calculate statistics
-	timeAverage := time.Duration(int64(timeTotal) / int64(successfulProbes))
+	// Calculate statistics. The mean is derived from the recorded response
+	// times rather than an accumulator, which previously was never updated
+	// and so always produced an average of 0s.
+	mean, _ := stats.Mean(responseTimes)
+	timeAverage := time.Duration(mean)
 	min, max := calculateMinMax(responseTimes)
+	// p50 and the median are identical; compute it once. Percentile
+	// computations can fail (and return NaN) when there are too few
+	// samples -- guard them so we never print garbage like
+	// '-2562047h47m16.854775808s' that comes from converting NaN to a
+	// time.Duration. percentileDuration returns "N/A" in that case.
 	median, _ := stats.Median(responseTimes)
-	p90, _ := stats.Percentile(responseTimes, 90)
-	p75, _ := stats.Percentile(responseTimes, 75)
-	p50, _ := stats.Percentile(responseTimes, 50)
-	p25, _ := stats.Percentile(responseTimes, 25)
+	p90, errP90 := stats.Percentile(responseTimes, 90)
+	p75, errP75 := stats.Percentile(responseTimes, 75)
+	p25, errP25 := stats.Percentile(responseTimes, 25)
 
 	if !jsonResults {
-		failureRate := float64(100 - (successfulProbes*100)/(i-1))
+		// Compute failure rate using floating-point division; the previous
+		// expression performed integer division before the float64 cast,
+		// which dropped any sub-percent precision.
+		failureRate := 100.0 * (1.0 - float64(successfulProbes)/float64(i-1))
 		infoLogger.Info("Results - Probes: %d, Success: %d, Failed: %.1f%%",
 			i-1, successfulProbes, failureRate)
 		infoLogger.Info("Timing - Min: %v, Avg: %v, Med: %v, Max: %v",
 			time.Duration(min), timeAverage, time.Duration(median), time.Duration(max))
-		infoLogger.Info("Percentiles - P90: %v, P75: %v, P50: %v, P25: %v",
-			time.Duration(p90), time.Duration(p75), time.Duration(p50), time.Duration(p25))
+		infoLogger.Info("Percentiles - P90: %s, P75: %s, P50: %v, P25: %s",
+			percentileDuration(p90, errP90),
+			percentileDuration(p75, errP75),
+			time.Duration(median),
+			percentileDuration(p25, errP25))
 	}
 }
 
+// percentileDuration converts a stats.Percentile result into a printable
+// value, returning "N/A" when the underlying computation failed or
+// produced a non-finite value (e.g. too few samples).
+func percentileDuration(value float64, err error) any {
+	if err != nil || value != value || value > 1e18 { // value != value checks for NaN
+		return "N/A"
+	}
+	return time.Duration(value)
+}
+
 func calculateMinMax(times []float64) (min, max float64) {
+	if len(times) == 0 {
+		return 0, 0
+	}
 	min = times[0]
 	max = times[0]
 	for _, t := range times {
@@ -333,7 +390,7 @@ func calculateMinMax(times []float64) (min, max float64) {
 	return min, max
 }
 
-func serverRESPONSE(w http.ResponseWriter, r *http.Request) {
+func serverResponse(w http.ResponseWriter, r *http.Request) {
 	hostname, _ := os.Hostname()
 	clientSocket := r.RemoteAddr
 	clientParts := strings.Split(clientSocket, ":")
