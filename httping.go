@@ -7,8 +7,8 @@
 package main
 
 import (
-	"crypto/tls"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -140,7 +140,7 @@ func main() {
 		listenPort := strconv.Itoa(*listenPtr)
 		infoLogger.Info("Starting listener on port %s", listenPort)
 
-		http.HandleFunc("/", serverRESPONSE)
+		http.HandleFunc("/", serverResponse)
 		if err := http.ListenAndServe(":"+listenPort, nil); err != nil {
 			errorLogger.Error("Listener failed: %v", err)
 			os.Exit(1)
@@ -178,7 +178,7 @@ func main() {
 	}
 
 	// Parse URL
-	url, err := url.Parse(urlStr)
+	target, err := url.Parse(urlStr)
 	if err != nil {
 		errorLogger.Error("URL parse error: %v", err)
 		os.Exit(1)
@@ -187,14 +187,14 @@ func main() {
 	// Set host header
 	hostHeader := *hostHeaderPtr
 	if hostHeader == "" {
-		hostHeader = url.Host
+		hostHeader = target.Host
 	}
 
-	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, url.Host, urlStr)
-	ping(httpVerb, url, count, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
+	infoLogger.Info("Starting HTTP %s to %s (%s)", httpVerb, target.Host, urlStr)
+	ping(httpVerb, target, count, timeout, hostHeader, jsonResults, followRedirects, noProxy, *insecureTLS)
 }
 
-func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
+func ping(httpVerb string, target *url.URL, count int, timeout time.Duration, hostHeader string, jsonResults bool, followRedirects bool, noProxy bool, insecureTLS bool) {
 	i := 1
 	successfulProbes := 0
 	var responseTimes []float64
@@ -230,7 +230,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			// go-get-proxied expects the URL scheme ("http"/"https"), not the
 			// HTTP verb. Passing httpVerb meant proxy auto-detection never
 			// matched.
-			p := proxy.NewProvider("").GetProxy(url.Scheme, url.String())
+			p := proxy.NewProvider("").GetProxy(target.Scheme, target.String())
 			if p != nil {
 				proxyInformation = fmt.Sprintf("proxy=%s", p)
 				transport.Proxy = http.ProxyURL(p.URL())
@@ -243,7 +243,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			CheckRedirect: checkRedirectFunc,
 		}
 
-		request, err := http.NewRequest(httpVerb, url.String(), nil)
+		request, err := http.NewRequest(httpVerb, target.String(), nil)
 		if err != nil {
 			errorLogger.Error("Request creation failed: %v", err)
 			continue
@@ -257,23 +257,23 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 
 		if errRequest != nil {
 			if tlsErr, ok := errRequest.(*tls.CertificateVerificationError); ok {
-			errorLogger.Error("TLS verification failed: %v", tlsErr)
-			for j, cert := range tlsErr.UnverifiedCertificates {
-				errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
-					j+1,
-					cert.Subject.CommonName,
-					cert.Issuer.CommonName,
-					cert.NotAfter.Format("2006-01-02"))
+				errorLogger.Error("TLS verification failed: %v", tlsErr)
+				for j, cert := range tlsErr.UnverifiedCertificates {
+					errorLogger.Error("Cert %d: Subject: %s, Issuer: %s, Expires: %s",
+						j+1,
+						cert.Subject.CommonName,
+						cert.Issuer.CommonName,
+						cert.NotAfter.Format("2006-01-02"))
+				}
+				if !insecureTLS {
+					errorLogger.Error("Use -insecure to bypass certificate validation")
+					return
+				}
+				warnLogger.Warn("Proceeding with insecure connection")
+			} else {
+				warnLogger.Warn("Request failed to %s | %s | Error: %v", target, proxyInformation, errRequest)
 			}
-			if !insecureTLS {
-				errorLogger.Error("Use -insecure to bypass certificate validation")
-				return
-			}
-			warnLogger.Warn("Proceeding with insecure connection")
-		} else {
-			warnLogger.Warn("Request failed to %s | %s | Error: %v", url, proxyInformation, errRequest)
-		}
-		continue
+			continue
 		}
 
 		body, err := io.ReadAll(result.Body)
@@ -290,7 +290,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 
 		if jsonResults {
 			results := &Result{
-				Host:        url.Host,
+				Host:        target.Host,
 				HTTPVerb:    httpVerb,
 				HostHeaders: hostHeader,
 				Seq:         i,
@@ -306,7 +306,7 @@ func ping(httpVerb string, url *url.URL, count int, timeout time.Duration, hostH
 			fmt.Println(string(jsonData))
 		} else {
 			infoLogger.Info("Connected to %s, %s, seq=%d, status=%d, bytes=%d, rtt=%.2fms",
-				url, proxyInformation, i, result.StatusCode, bytes, float32(responseTime)/1e6)
+				target, proxyInformation, i, result.StatusCode, bytes, float32(responseTime)/1e6)
 		}
 
 		if result.StatusCode >= 100 && result.StatusCode < 400 {
@@ -370,7 +370,7 @@ func calculateMinMax(times []float64) (min, max float64) {
 	return min, max
 }
 
-func serverRESPONSE(w http.ResponseWriter, r *http.Request) {
+func serverResponse(w http.ResponseWriter, r *http.Request) {
 	hostname, _ := os.Hostname()
 	clientSocket := r.RemoteAddr
 	clientParts := strings.Split(clientSocket, ":")
